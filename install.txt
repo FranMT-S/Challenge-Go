@@ -1,0 +1,4 @@
+-- Inicializar Programa
+go mod init "name repositorio"/"ruta"
+
+go get -u github.com/go-chi/chi/v5
