@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/FranMT-S/SWE_Challenge-backend/core"
+	"github.com/FranMT-S/SWE_Challenge-backend/src/core"
 )
 
 func main() {
