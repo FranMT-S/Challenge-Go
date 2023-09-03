@@ -2,6 +2,7 @@ package controller
 
 import "fmt"
 
-func controller() {
+func Controller() {
 	fmt.Print("este es un controller")
+
 }

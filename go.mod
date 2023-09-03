@@ -1,3 +1,3 @@
-module github.com/FranMT-S/SWE_Challenge-backend
+module challenge
 
 go 1.20
