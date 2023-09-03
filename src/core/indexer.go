@@ -1,6 +1,11 @@
 package core
 
-type Mail struct {
-	Name string
-	Data string
-}
+// import (
+// 	"challenger/src/core"
+// 	"challenger/src/model"
+// )
+
+// type Indexer struct {
+// 	Mails []model.Mail
+// 	Parse core.ParserMail
+// }

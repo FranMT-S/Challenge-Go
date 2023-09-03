@@ -2,6 +2,9 @@ package main
 
 import (
 	"bufio"
+	"challenge/src/core/bulker"
+	"challenge/src/core/parser"
+	"challenge/src/model"
 	"errors"
 	"fmt"
 	"io"
@@ -10,71 +13,134 @@ import (
 	"time"
 )
 
+type TestData struct {
+	Name string
+	Data []string
+	Arr  []TestData
+}
+
 func main() {
 	createDirectoryIfNotExist()
+	pagination := 5000
 
-	// cpu, err := os.Create("cpu.prof")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// pprof.StartCPUProfile(cpu)
-	// defer pprof.StopCPUProfile()
-
-	// path := "src/db/maildir"
+	path := "src/db/maildir"
 
 	// directorys, _ := listAll(path)
+
+	// path := "src/db/maildir/arora-h"
+	directorys := listAllFiles(path)
 
 	// for _, v := range directorys {
 	// 	fmt.Println(v)
 	// }
-	// mail := core.Mail{"", "3"}
-	// mail2 := new(core.Mail)
-	// mail2.Name = "Marta"
-	// pBytes, _ := json.Marshal(mail)
-	// pBytes2, _ := json.Marshal(mail2)
 
-	// fmt.Println(string(pBytes))
-	// fmt.Println(string(pBytes2))
+	// var mails []*model.Mail
+	// i := 0
 
-	// f, err := myWriter(true)
+	// for i := 0; i < len(directorys); i++ {
 
-	// if err != nil {
-	// 	log.Println(err.Error())
+	// 	fmt.Println(directorys[i])
+
+	// 	// file, err := os.Open(directorys[i])
+	// 	// // file, err := os.Open("src/db/maildir/arora-h/inbox/1")
+
+	// 	// if err != nil {
+	// 	// 	log.Fatal(err)
+	// 	// }
+	// 	// myParse := new(parser.ParserNormal)
+	// 	// mails = append(mails, myParse.Parse(file))
+	// 	// fmt.Println("ruta parseada: " + directorys[i])
+	// 	// file.Close()
+
 	// }
-	// defer f.Close()
 
-	file, err := os.Open("src/db/maildir/arora-h/deleted_items/34")
+	part := make([]string, len(directorys))
+	myParse := new(parser.ParserNormal)
+	var b bulker.Bulker
 
-	if err != nil {
-		log.Fatal(err)
+	bulk := &bulker.BulkerV1{b}
+
+	// 	// bulk := &bulker.BulkerV2{b}
+
+	// 	// bulk.Bulk()
+	// 	// fmt.Println(bulk.GetData())
+	//    bulker.RequestBulk(bulk)
+	// 	// fmt.Println("llegue aqui")
+
+	// Ciclo con paginacion
+	for i := 0; i <= (len(directorys) / pagination); i++ {
+		start := i * pagination
+		end := (i + 1) * pagination
+
+		if end > len(directorys) && len(directorys)%pagination != 0 {
+			part = directorys[start:]
+		} else if start < len(directorys) {
+			part = directorys[start:end]
+		}
+
+		if len(part) > 0 {
+
+			var mails []*model.Mail
+
+			for j := 0; j < len(part); j++ {
+
+				file, err := os.Open(part[j])
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				mails = append(mails, myParse.Parse(file))
+				fmt.Println("Parseando: " + part[j])
+				file.Close()
+			}
+
+			bulk.Mails = mails
+			bulker.RequestBulk(bulk)
+			mails = nil
+			fmt.Println("---------------------------")
+			fmt.Printf("---------Request %v--------", i+1)
+			fmt.Println("---------------------------")
+		}
+
 	}
 
-	ReadLineForLineScanner(file)
+	// 	var b bulker.Bulker
+	// 	b.Mails = mails
 
+	// 	bulk := &bulker.BulkerV1{b}
+	// 	// bulk := &bulker.BulkerV2{b}
+
+	// 	// bulk.Bulk()
+	// 	// fmt.Println(bulk.GetData())
+	// 	bulker.RequestBulk(bulk)
+	// 	// fmt.Println("llegue aqui")
 }
 
-func ReadLineForLineScanner(file *os.File) {
+func ReadLineForLineBufio(file *os.File) {
 
 	defer file.Close()
-	scanner := bufio.NewScanner(file)
-
-	// optionally, resize scanner's capacity for lines over 64K, see next example
-	const maxCapacity int = 1024 // your required line length
-	buf := make([]byte, maxCapacity)
-	scanner.Buffer(buf, maxCapacity)
+	reader := bufio.NewReader(file)
 
 	json, _ := myWriter(true, false)
 	defer json.Close()
 
-	for scanner.Scan() {
-		json.Write(scanner.Bytes())
-		fmt.Println(scanner.Text())
+	for {
+		lines, err := reader.ReadBytes('\n')
+
+		if err != nil {
+
+			if err == io.EOF {
+				log.Println(err)
+			}
+
+			break
+		}
+
+		json.Write(lines)
+		fmt.Println(string(lines))
+
 	}
 
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
-	}
 }
 
 func ReadLineForLine(file *os.File) {
@@ -91,13 +157,28 @@ func ReadLineForLine(file *os.File) {
 			break
 		}
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			continue
 		}
 		if n > 0 {
 			json.Write(buf[:n])
 			fmt.Println(string(buf[:n]))
 		}
+	}
+}
+
+func ReadLineForLineScanner(file *os.File) {
+
+	defer file.Close()
+
+	json, _ := myWriter(true, false)
+	defer json.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		json.Write(scanner.Bytes())
+		fmt.Println(scanner.Text())
 	}
 }
 
@@ -131,13 +212,27 @@ func createDirectoryIfNotExist() {
 	}
 }
 
-func isDirectory(path string) (bool, error) {
-	fileInfo, err := os.Stat(path)
+func listAllFiles(path string) (files []string) {
+
+	dir, err := os.ReadDir(path)
+
 	if err != nil {
-		return false, err
+		fmt.Println("no se encontro el directorio: " + path)
 	}
 
-	return fileInfo.IsDir(), err
+	for i := 0; i < len(dir); i++ {
+		newpath := path + "/" + dir[i].Name()
+
+		if dir[i].IsDir() {
+			subFiles := listAllFiles(newpath)
+			files = append(files, subFiles...)
+		} else {
+			files = append(files, newpath)
+		}
+
+	}
+
+	return files
 }
 
 func listAll(path string) ([]string, []string) {
@@ -146,17 +241,13 @@ func listAll(path string) ([]string, []string) {
 	dir, err := os.ReadDir(path)
 
 	if err != nil {
-		fmt.Println("no se encontro el directorio")
-
+		fmt.Println("no se encontro el directorio:" + path)
 	}
 
 	for i := 0; i < len(dir); i++ {
 		newpath := path + "/" + dir[i].Name()
-		dir, err := isDirectory(newpath)
-		if err != nil {
-			fmt.Println("No se encontro el directorio:" + newpath)
-		}
-		if dir {
+
+		if dir[i].IsDir() {
 			subDir, subFiles := listAll(newpath)
 			directorys = append(directorys, newpath)
 			directorys = append(directorys, subDir...)
