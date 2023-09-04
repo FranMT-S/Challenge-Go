@@ -29,15 +29,31 @@ const X_FOLDER = "X-Folder:"
 const X_ORIGIN = "X-Origin:"
 const X_FILENAME = "X-FileName:"
 
-type ParserMail interface {
-	Parse(file *os.File) *model.Mail
+/*
+
+IParser Mail
+
+Proporciona el metodo para transformar un archivo a un formato de Correo.
+
+*/
+
+type IParserMail interface {
+	Parse(file *os.File) model.Mail
 }
+
+/*
+--------------------
+Parseador con Normal
+--------------------
+
+Lee linea por linea y asigna el contenido al correo
+*/
 
 type ParserNormal struct{}
 
-func (parser *ParserNormal) Parse(file *os.File) *model.Mail {
+func (parser ParserNormal) Parse(file *os.File) model.Mail {
 	// buf := make([]byte, 1024)
-	mail := new(model.Mail)
+	mail := model.Mail{}
 
 	reader := bufio.NewReader(file)
 
@@ -52,7 +68,7 @@ func (parser *ParserNormal) Parse(file *os.File) *model.Mail {
 		}
 
 		line := string(lineByte)
-
+		// fmt.Println(line)
 		switch {
 		case strings.Contains(line, X_FROM):
 			mail.X_From = line[len(X_FROM):]
@@ -114,11 +130,19 @@ func (parser *ParserNormal) Parse(file *os.File) *model.Mail {
 	return mail
 }
 
+/*
+--------------------
+Parseador con Regex
+--------------------
+
+Usa Expresiones Regulares para parsear el contenido
+*/
+
 type ParserWithRegex struct{}
 
-func (parser *ParserWithRegex) Parse(file *os.File) *model.Mail {
+func (parser ParserWithRegex) Parse(file *os.File) model.Mail {
 	// buf := make([]byte, 1024)
-	mail := new(model.Mail)
+	mail := model.Mail{}
 
 	bytes, err := io.ReadAll(file)
 	if err != nil {

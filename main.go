@@ -2,9 +2,10 @@ package main
 
 import (
 	"bufio"
+	"challenge/src/constants"
+	"challenge/src/core"
 	"challenge/src/core/bulker"
 	"challenge/src/core/parser"
-	"challenge/src/model"
 	"errors"
 	"fmt"
 	"io"
@@ -13,107 +14,30 @@ import (
 	"time"
 )
 
-type TestData struct {
-	Name string
-	Data []string
-	Arr  []TestData
-}
-
 func main() {
+	constants.InitializeVarEnviroment()
+
 	createDirectoryIfNotExist()
-	pagination := 5000
 
-	path := "src/db/maildir"
+	// path := "src/db/maildir/"
+	path := "src/db/maildir/arora-h"
 
-	// directorys, _ := listAll(path)
+	FilePaths := listAllFiles(path)[2:5]
+	println(FilePaths)
 
-	// path := "src/db/maildir/arora-h"
-	directorys := listAllFiles(path)
+	_Parser := parser.ParserNormal{}
+	// bulk := bulker.CreateBulkerV2()
+	_Bulker := bulker.CreateBulkerV1()
+	// pagination := 0
 
-	// for _, v := range directorys {
-	// 	fmt.Println(v)
-	// }
+	indexer := core.Indexer{}
+	// indexer := core.Indexer{FilePaths, myParse, bulk, pagination}
 
-	// var mails []*model.Mail
-	// i := 0
+	indexer.FilePaths = FilePaths
+	indexer.Parser = _Parser
+	indexer.Bulker = _Bulker
+	indexer.Start()
 
-	// for i := 0; i < len(directorys); i++ {
-
-	// 	fmt.Println(directorys[i])
-
-	// 	// file, err := os.Open(directorys[i])
-	// 	// // file, err := os.Open("src/db/maildir/arora-h/inbox/1")
-
-	// 	// if err != nil {
-	// 	// 	log.Fatal(err)
-	// 	// }
-	// 	// myParse := new(parser.ParserNormal)
-	// 	// mails = append(mails, myParse.Parse(file))
-	// 	// fmt.Println("ruta parseada: " + directorys[i])
-	// 	// file.Close()
-
-	// }
-
-	part := make([]string, len(directorys))
-	myParse := new(parser.ParserNormal)
-	var b bulker.Bulker
-
-	bulk := &bulker.BulkerV1{b}
-
-	// 	// bulk := &bulker.BulkerV2{b}
-
-	// 	// bulk.Bulk()
-	// 	// fmt.Println(bulk.GetData())
-	//    bulker.RequestBulk(bulk)
-	// 	// fmt.Println("llegue aqui")
-
-	// Ciclo con paginacion
-	for i := 0; i <= (len(directorys) / pagination); i++ {
-		start := i * pagination
-		end := (i + 1) * pagination
-
-		if end > len(directorys) && len(directorys)%pagination != 0 {
-			part = directorys[start:]
-		} else if start < len(directorys) {
-			part = directorys[start:end]
-		}
-
-		if len(part) > 0 {
-
-			var mails []*model.Mail
-
-			for j := 0; j < len(part); j++ {
-
-				file, err := os.Open(part[j])
-				if err != nil {
-					log.Fatal(err)
-				}
-
-				mails = append(mails, myParse.Parse(file))
-				fmt.Println("Parseando: " + part[j])
-				file.Close()
-			}
-
-			bulk.Mails = mails
-			bulker.RequestBulk(bulk)
-			mails = nil
-			fmt.Println("---------------------------")
-			fmt.Printf("---------Request %v--------", i+1)
-			fmt.Println("---------------------------")
-		}
-
-	}
-
-	// 	var b bulker.Bulker
-	// 	b.Mails = mails
-
-	// 	bulk := &bulker.BulkerV1{b}
-	// 	// bulk := &bulker.BulkerV2{b}
-
-	// 	// bulk.Bulk()
-	// 	// fmt.Println(bulk.GetData())
-	// 	bulker.RequestBulk(bulk)
-	// 	// fmt.Println("llegue aqui")
 }
 
 func ReadLineForLineBufio(file *os.File) {
@@ -233,29 +157,4 @@ func listAllFiles(path string) (files []string) {
 	}
 
 	return files
-}
-
-func listAll(path string) ([]string, []string) {
-	var directorys, files []string
-
-	dir, err := os.ReadDir(path)
-
-	if err != nil {
-		fmt.Println("no se encontro el directorio:" + path)
-	}
-
-	for i := 0; i < len(dir); i++ {
-		newpath := path + "/" + dir[i].Name()
-
-		if dir[i].IsDir() {
-			subDir, subFiles := listAll(newpath)
-			directorys = append(directorys, newpath)
-			directorys = append(directorys, subDir...)
-			files = append(files, subFiles...)
-		} else {
-			files = append(files, newpath)
-		}
-	}
-
-	return directorys, files
 }

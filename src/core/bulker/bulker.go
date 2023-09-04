@@ -4,31 +4,61 @@ import (
 	model "challenge/src/model"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
-	"strings"
+	"os"
 )
 
+// Formato para el Request Bulker V1
 type bulkResponse struct {
 	Index   string
-	Records []*model.Mail
+	Records []model.Mail
 }
 
+// GetCommand - comando que se usara en el Request
+// GetData - Obtener los datos usarse despues de un bulk
+// SetMails - Establecer correos
+// GetMails - Obtener correos
+// Bulk - Transforma los correos en el formato que usare el Request al subir los datos.
 type IBulker interface {
 	GetCommand() string
 	GetData() string
+	SetMails(mails []model.Mail)
+	GetMails() []model.Mail
 	Bulk()
 }
 
+/*
+Bulker estructura que heredaran los Bulker Concretos, simula una clase abstracta
+no instanciar y usar por si sola.
+*/
 type Bulker struct {
-	Mails []*model.Mail
+	mails []model.Mail
 	data  string
+}
+
+func (bulk Bulker) GetCommand() string {
+	return ""
 }
 
 func (bulk Bulker) GetData() string {
 	return bulk.data
 }
+
+func (bulk Bulker) GetMails() []model.Mail {
+	return bulk.mails
+}
+
+func (bulk *Bulker) SetMails(mails []model.Mail) {
+	bulk.mails = mails
+}
+
+func (bulk Bulker) Bulk() {}
+
+/*
+-----------------------------------
+Section Bulker V1
+-----------------------------------
+*/
 
 type BulkerV1 struct {
 	Bulker
@@ -39,7 +69,7 @@ func (bulk BulkerV1) GetCommand() string {
 }
 
 func (bulk *BulkerV1) Bulk() {
-	bulkResponse := bulkResponse{"mails", bulk.Mails}
+	bulkResponse := bulkResponse{os.Getenv("INDEX"), bulk.GetMails()}
 	json, err := json.Marshal(bulkResponse)
 
 	if err != nil {
@@ -49,7 +79,27 @@ func (bulk *BulkerV1) Bulk() {
 	bulk.data = string(json)
 }
 
-// Bulker V2
+/*
+Tiene un funcion con pointer receiver por lo que es necesario
+retornar un puntero para que la interface IBulker lo acepte
+*/
+func CreateBulkerV1() *BulkerV1 {
+	var b Bulker
+
+	return &BulkerV1{b}
+}
+
+/*
+-----------------------------------
+End Section Bulker V1
+-----------------------------------
+*/
+
+/*
+-----------------------------------
+Section Bulker V2
+-----------------------------------
+*/
 
 type BulkerV2 struct {
 	Bulker
@@ -60,47 +110,29 @@ func (bulk BulkerV2) GetCommand() string {
 }
 
 func (bulk *BulkerV2) Bulk() {
-	index := "{ \"index\" : { \"_index\" : \"mails\" }} "
+	index := fmt.Sprintf(`{ "index" : { "_index" : "%v" } }  `, os.Getenv("INDEX"))
 	json := ""
-
-	for i := 0; i < len(bulk.Mails); i++ {
+	mails := bulk.GetMails()
+	for i := 0; i < len(mails); i++ {
 		json += index + "\n"
-		json += bulk.Mails[i].String() + "\n"
+		json += mails[i].String() + "\n"
 	}
 
 	bulk.data = json
 }
 
-func RequestBulk(bulker IBulker) {
+/*
+Tiene un funcion con pointer receiver por lo que es necesario
+retornar un puntero para que la interface IBulker lo acepte
+*/
+func CreateBulkerV2() *BulkerV2 {
+	var b Bulker
 
-	url := "http://localhost:4080/api/" + bulker.GetCommand()
-	bulker.Bulk()
-
-	data := strings.NewReader(bulker.GetData())
-
-	req, err := http.NewRequest("POST", url, data)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	req.SetBasicAuth("admin", "Complexpass#123")
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36")
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer resp.Body.Close()
-
-	log.Println(resp.StatusCode)
-	body, err := io.ReadAll(resp.Body)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println(string(body))
-
+	return &BulkerV2{b}
 }
+
+/*
+-----------------------------------
+End Bulker V2
+-----------------------------------
+*/
