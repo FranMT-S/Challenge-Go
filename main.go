@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-
 	"errors"
 	"fmt"
 	"io"
@@ -11,33 +10,35 @@ import (
 	"time"
 
 	"github.com/FranMT-S/Challenge-Go/src/constants"
-	"github.com/FranMT-S/Challenge-Go/src/core"
-	"github.com/FranMT-S/Challenge-Go/src/core/bulker"
-	"github.com/FranMT-S/Challenge-Go/src/core/parser"
+	"github.com/FranMT-S/Challenge-Go/src/core/server"
+	// "github.com/FranMT-S/Challenge-Go/src/core"
+	// "github.com/FranMT-S/Challenge-Go/src/core/bulker"
+	// "github.com/FranMT-S/Challenge-Go/src/core/parser"
 )
 
 func main() {
 	constants.InitializeVarEnviroment()
 
 	createDirectoryIfNotExist()
-	// path := "src/db/maildir/"
-	// path := "src/db/maildir/arora-h"
-	path := "src/db/maildir/arora-h/all_documents"
+	// // path := "src/db/maildir/"
+	// // path := "src/db/maildir/arora-h"
+	// path := "src/db/maildir/arora-h/all_documents"
 
-	FilePaths := listAllFiles(path)[2:5]
+	// FilePaths := listAllFiles(path)[2:5]
 
-	_Parser := parser.ParserNormal{}
-	// bulk := bulker.CreateBulkerV2()
-	_Bulker := bulker.CreateBulkerV1()
-	// pagination := 0
+	// _Parser := parser.ParserNormal{}
+	// // bulk := bulker.CreateBulkerV2()
+	// _Bulker := bulker.CreateBulkerV1()
+	// // pagination := 0
 
-	indexer := core.Indexer{}
-	// indexer := core.Indexer{FilePaths, myParse, bulk, pagination}
+	// indexer := core.Indexer{}
+	// // indexer := core.Indexer{FilePaths, myParse, bulk, pagination}
 
-	indexer.FilePaths = FilePaths
-	indexer.Parser = _Parser
-	indexer.Bulker = _Bulker
+	// indexer.FilePaths = FilePaths
+	// indexer.Parser = _Parser
+	// indexer.Bulker = _Bulker
 	// indexer.Start()
+	server.Server()
 
 }
 
