@@ -63,6 +63,7 @@ func (parser ParserNormal) Parse(file *os.File) model.Mail {
 
 		if err != nil {
 			if err != io.EOF {
+				log.Println("Error al parserar el archivo: ", file.Name())
 				log.Println(err)
 			}
 			break
