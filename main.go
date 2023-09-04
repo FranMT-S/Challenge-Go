@@ -2,28 +2,29 @@ package main
 
 import (
 	"bufio"
-	"challenge/src/constants"
-	"challenge/src/core"
-	"challenge/src/core/bulker"
-	"challenge/src/core/parser"
+
 	"errors"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"time"
+
+	"github.com/FranMT-S/Challenge-Go/src/constants"
+	"github.com/FranMT-S/Challenge-Go/src/core"
+	"github.com/FranMT-S/Challenge-Go/src/core/bulker"
+	"github.com/FranMT-S/Challenge-Go/src/core/parser"
 )
 
 func main() {
 	constants.InitializeVarEnviroment()
 
 	createDirectoryIfNotExist()
-
 	// path := "src/db/maildir/"
-	path := "src/db/maildir/arora-h"
+	// path := "src/db/maildir/arora-h"
+	path := "src/db/maildir/arora-h/all_documents"
 
 	FilePaths := listAllFiles(path)[2:5]
-	println(FilePaths)
 
 	_Parser := parser.ParserNormal{}
 	// bulk := bulker.CreateBulkerV2()
@@ -36,7 +37,7 @@ func main() {
 	indexer.FilePaths = FilePaths
 	indexer.Parser = _Parser
 	indexer.Bulker = _Bulker
-	indexer.Start()
+	// indexer.Start()
 
 }
 

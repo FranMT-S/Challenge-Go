@@ -2,13 +2,14 @@ package parser
 
 import (
 	"bufio"
-	model "challenge/src/model"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"regexp"
 	"strings"
+
+	model "github.com/FranMT-S/Challenge-Go/src/model"
 )
 
 const MESSAGE_ID = "Message-ID:"

@@ -1,15 +1,16 @@
 package core
 
 import (
-	"challenge/src/core/bulker"
-	"challenge/src/core/parser"
-	"challenge/src/model"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/FranMT-S/Challenge-Go/src/core/bulker"
+	"github.com/FranMT-S/Challenge-Go/src/core/parser"
+	"github.com/FranMT-S/Challenge-Go/src/model"
 )
 
 /*

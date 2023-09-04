@@ -1,11 +1,12 @@
 package bulker
 
 import (
-	model "challenge/src/model"
 	"encoding/json"
 	"fmt"
 	"log"
 	"os"
+
+	model "github.com/FranMT-S/Challenge-Go/src/model"
 )
 
 // Formato para el Request Bulker V1
