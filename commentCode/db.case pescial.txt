@@ -1,0 +1,19 @@
+
+// Formatos a revisar
+backend\src\db\maildir\arora-h\sent_items\2
+
+backend/src/db/maildir/arora-h/sent_items/26
+
+backend/src/db/maildir/arora-h/sent_items/27
+
+
+backend/src/db/maildir/arora-h/sent_items/59
+
+
+// Varias Campos repetidos:
+
+backend/src/db/maildir/beck-s/aec/2
+
+backend/src/db/maildir/beck-s/aec/3
+
+backend/src/db/maildir/allen-p/straw/7

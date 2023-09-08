@@ -7,10 +7,11 @@ import (
 	"io"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/FranMT-S/Challenge-Go/src/constants"
-	"github.com/FranMT-S/Challenge-Go/src/core/server"
+	Helpers "github.com/FranMT-S/Challenge-Go/src/helpers"
 	// "github.com/FranMT-S/Challenge-Go/src/core"
 	// "github.com/FranMT-S/Challenge-Go/src/core/bulker"
 	// "github.com/FranMT-S/Challenge-Go/src/core/parser"
@@ -20,26 +21,34 @@ func main() {
 	constants.InitializeVarEnviroment()
 
 	createDirectoryIfNotExist()
-	// // path := "src/db/maildir/"
-	// // path := "src/db/maildir/arora-h"
-	// path := "src/db/maildir/arora-h/all_documents"
 
-	// FilePaths := listAllFiles(path)[2:5]
+	startTime := time.Now() // Registra el tiempo de inicio
 
-	// _Parser := parser.ParserNormal{}
-	// // bulk := bulker.CreateBulkerV2()
-	// _Bulker := bulker.CreateBulkerV1()
-	// // pagination := 0
+	// path := "src/db/maildir"
+	// path := "src/db/maildir/allen-p"
 
-	// indexer := core.Indexer{}
-	// // indexer := core.Indexer{FilePaths, myParse, bulk, pagination}
+	// listFiles := ListAllFilesRecursive(path)[:100000]
+	// listFiles := ListAllFilesQuoteBasic(path)
+	// listFiles := ListAllFilesQueueSafe(path, 5)
+	// listFiles := []string{"src/db/maildir/beck-s/aec/2"}
+	// listFiles := []string{"src/db/maildir/allen-p/straw/7"}
 
-	// indexer.FilePaths = FilePaths
-	// indexer.Parser = _Parser
-	// indexer.Bulker = _Bulker
+	// for _, v := range listFiles {
+	// 	fmt.Println(v)
+	// }
+
+	// indexer := core.Indexer{listFiles, parser.ParserNormal{}, bulker.CreateBulkerV1(), 5000}
+	// indexer := core.Indexer{listFiles, parser.NewParserAsyn(50), bulker.CreateBulkerV1(), 5000}
 	// indexer.Start()
-	server.Server()
 
+	_map := map[string]string{}
+	fmt.Printf("el path es:%v \n", _map["test"])
+
+	endTime := time.Now()
+	duration := endTime.Sub(startTime)
+	seconds := duration.Seconds()
+
+	fmt.Printf("El código se ejecutó en %.2f segundos\n", seconds)
 }
 
 func ReadLineForLineBufio(file *os.File) {
@@ -136,4 +145,117 @@ func createDirectoryIfNotExist() {
 			log.Println(err)
 		}
 	}
+}
+
+func ListAllFilesRecursive(path string) (files []string) {
+
+	dir, err := os.ReadDir(path)
+
+	if err != nil {
+		fmt.Println("no se encontro el directorio: " + path)
+	}
+
+	for i := 0; i < len(dir); i++ {
+		newpath := path + "/" + dir[i].Name()
+
+		if dir[i].IsDir() {
+			subFiles := ListAllFilesRecursive(newpath)
+			files = append(files, subFiles...)
+		} else {
+			files = append(files, newpath)
+		}
+
+	}
+
+	return files
+}
+
+// Necesita arreglos
+func ListAllFilesQueueSafe(path string, maxConcurrent int) (files []string) {
+	// Crea un semáforo para limitar el número de hilos concurrentes
+	semaphore := make(chan struct{}, maxConcurrent)
+	var wg sync.WaitGroup
+	semaphore <- struct{}{}
+	<-semaphore
+
+	_, err := os.ReadDir(path)
+	if err != nil {
+		fmt.Println("no se encontro el directorio: " + path)
+	}
+
+	queueSafe := Helpers.NewQueueSafe()
+	queueSafe.Push(path)
+
+	currentPath := queueSafe.Poll()
+
+	var visit func(quote *Helpers.QueueSafe, _path string)
+
+	visit = func(quote *Helpers.QueueSafe, _path string) {
+		defer wg.Done()
+
+		if _path != "" {
+			directorys, _ := os.ReadDir(_path)
+
+			for _, dir := range directorys {
+
+				newPath := _path + "/" + dir.Name()
+				if dir.IsDir() {
+					quote.Push(newPath)
+				} else {
+					files = append(files, newPath)
+				}
+			}
+		}
+
+		for {
+
+			p := quote.Poll()
+			if p == "" {
+				break
+			}
+			wg.Add(1)
+			go func() {
+				visit(Helpers.NewQueueSafe(), p)
+			}()
+
+		}
+
+	}
+
+	wg.Add(1) // Agrega una goroutine para el directorio raíz
+	visit(queueSafe, currentPath)
+	wg.Wait() // Espera a que todas las goroutines hayan terminado
+
+	return files
+}
+
+func ListAllFilesQuoteBasic(path string) (files []string) {
+
+	_, err := os.ReadDir(path)
+	if err != nil {
+		fmt.Println("no se encontro el directorio: " + path)
+	}
+
+	quoteBasic := Helpers.NewQueueBasic()
+	quoteBasic.Push(path)
+
+	for {
+		currentPath := quoteBasic.Poll()
+		if currentPath == "" {
+			break
+		}
+
+		directorys, _ := os.ReadDir(currentPath)
+		for _, dir := range directorys {
+			newPath := currentPath + "/" + dir.Name()
+			if dir.IsDir() {
+				quoteBasic.Push(newPath)
+			} else {
+				files = append(files, newPath)
+			}
+		}
+
+	}
+
+	return files
 }

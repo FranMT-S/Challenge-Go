@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 )
 
@@ -50,4 +51,15 @@ func (mail Mail) ToJson() string {
 // Transforma el correo a Json pero devuelve los datos en un arreglo de bytes
 func (mail Mail) ToJsonBytes() ([]byte, error) {
 	return json.Marshal(mail)
+}
+
+func MailFromJson(_json []byte) Mail {
+	var mail Mail
+
+	if err := json.Unmarshal(_json, &mail); err != nil {
+		fmt.Println(err)
+		return mail
+	}
+
+	return mail
 }

@@ -1,0 +1,126 @@
+// switch {
+		// case strings.Contains(line, X_FROM):
+		// 	mail.X_From = line[len(X_FROM):]
+		// 	break
+		// case strings.Contains(line, X_TO):
+		// 	mail.X_To = line[len(X_TO):]
+		// 	break
+		// case strings.Contains(line, X_CC):
+		// 	mail.X_cc = line[len(X_CC):]
+		// 	break
+		// case strings.Contains(line, X_BCC):
+		// 	mail.X_bcc = line[len(X_BCC):]
+		// 	break
+		// case strings.Contains(line, X_FOLDER):
+		// 	mail.X_Folder = line[len(X_FOLDER):]
+		// 	break
+		// case strings.Contains(line, X_ORIGIN):
+		// 	mail.X_Origin = line[len(X_ORIGIN):]
+		// 	break
+		// case strings.Contains(line, X_FILENAME):
+		// 	mail.X_FileName = line[len(X_FILENAME):]
+		// 	break
+		// case strings.Contains(line, MESSAGE_ID):
+		// 	mail.Message_ID = line[len(MESSAGE_ID):]
+		// 	break
+		// case strings.Contains(line, DATE):
+		// 	mail.Date = line[len(DATE):]
+		// 	break
+		// case strings.Contains(line, FROM):
+		// 	mail.From = line[len(FROM):]
+		// 	break
+		// case strings.Contains(line, TO):
+		// 	mail.To = line[len(TO):]
+		// 	break
+		// case strings.Contains(line, SUBJECT):
+		// 	mail.Subject = line[len(SUBJECT):]
+		// 	break
+		// case strings.Contains(line, CC):
+		// 	mail.Cc = line[len(CC):]
+		// 	break
+		// case strings.Contains(line, BCC):
+		// 	mail.Bcc = line[len(BCC):]
+		// 	break
+		// case strings.Contains(line, MIME_VERSION):
+		// 	mail.Mime_Version = line[len(MIME_VERSION):]
+		// 	break
+		// case strings.Contains(line, CONTENT_TYPE):
+		// 	mail.Content_Type = line[len(CONTENT_TYPE):]
+		// 	break
+		// case strings.Contains(line, CONTENT_TRANSFER_ENCODING):
+		// 	mail.Content_Transfer_Encoding = line[len(CONTENT_TRANSFER_ENCODING):]
+		// 	break
+		// default:
+		// 	mail.Content += line
+		// }
+		// fmt.Println(line)
+
+
+
+
+		
+func analizeHeader(mailMap map[string]string, line string, beforeField string) (beforeFieldUpdated string) {
+
+	if mailMap[K_X_FILENAME] != "" {
+		return ""
+	}
+
+	if strings.Contains(line, X_FROM) && mailMap[K_X_FROM] == "" {
+		mailMap[K_X_FROM] = line[len(X_FROM):]
+		beforeFieldUpdated = K_X_FROM
+
+	} else if strings.Contains(line, X_TO) && mailMap[K_X_TO] == "" {
+		mailMap[K_X_TO] = line[len(X_TO):]
+		beforeFieldUpdated = K_X_TO
+	} else if strings.Contains(line, X_CC) && mailMap[K_X_CC] == "" {
+		mailMap[K_X_CC] = line[len(X_CC):]
+		beforeFieldUpdated = K_X_CC
+	} else if strings.Contains(line, X_BCC) && mailMap[K_X_BCC] == "" {
+		mailMap[K_X_BCC] = line[len(X_BCC):]
+		beforeFieldUpdated = K_X_BCC
+	} else if strings.Contains(line, X_FOLDER) && mailMap[K_X_FOLDER] == "" {
+		mailMap[K_X_FOLDER] = line[len(X_FOLDER):]
+		beforeFieldUpdated = K_X_FOLDER
+	} else if strings.Contains(line, X_ORIGIN) && mailMap[K_X_ORIGIN] == "" {
+		mailMap[K_X_ORIGIN] = line[len(X_ORIGIN):]
+		beforeFieldUpdated = K_X_ORIGIN
+	} else if strings.Contains(line, X_FILENAME) && mailMap[K_X_FILENAME] == "" {
+		mailMap[K_X_FILENAME] = line[len(X_FILENAME):]
+		beforeFieldUpdated = K_X_FILENAME
+	} else if strings.Contains(line, MESSAGE_ID) && mailMap[K_MESSAGE_ID] == "" {
+		mailMap[K_MESSAGE_ID] = line[len(MESSAGE_ID):]
+		beforeFieldUpdated = K_MESSAGE_ID
+	} else if strings.Contains(line, DATE) && mailMap[K_DATE] == "" {
+		mailMap[K_DATE] = line[len(DATE):]
+		beforeFieldUpdated = K_DATE
+	} else if strings.Contains(line, FROM) && mailMap[K_FROM] == "" {
+		mailMap[K_FROM] = line[len(FROM):]
+		beforeFieldUpdated = K_FROM
+	} else if strings.Contains(line, TO) && mailMap[K_TO] == "" {
+		mailMap[K_TO] = line[len(TO):]
+		beforeFieldUpdated = K_TO
+	} else if strings.Contains(line, SUBJECT) && mailMap[K_SUBJECT] == "" {
+		mailMap[K_SUBJECT] = line[len(SUBJECT):]
+		beforeFieldUpdated = K_SUBJECT
+	} else if strings.Contains(line, CC) && mailMap[K_CC] == "" {
+		mailMap[K_CC] = line[len(CC):]
+		beforeFieldUpdated = K_CC
+	} else if strings.Contains(line, BCC) && mailMap[K_BCC] == "" {
+		mailMap[K_BCC] = line[len(BCC):]
+		beforeFieldUpdated = K_BCC
+	} else if strings.Contains(line, MIME_VERSION) && mailMap[K_MIME_VERSION] == "" {
+		mailMap[K_MIME_VERSION] = line[len(MIME_VERSION):]
+		beforeFieldUpdated = K_MIME_VERSION
+	} else if strings.Contains(line, CONTENT_TYPE) && mailMap[K_CONTENT_TYPE] == "" {
+		mailMap[K_CONTENT_TYPE] = line[len(CONTENT_TYPE):]
+		beforeFieldUpdated = K_CONTENT_TYPE
+	} else if strings.Contains(line, CONTENT_TRANSFER_ENCODING) && mailMap[K_CONTENT_TRANSFER_ENCODING] == "" {
+		mailMap[K_CONTENT_TRANSFER_ENCODING] = line[len(CONTENT_TRANSFER_ENCODING):]
+		beforeFieldUpdated = K_CONTENT_TRANSFER_ENCODING
+	} else if beforeField != "" {
+		mailMap[beforeField] += line
+		beforeFieldUpdated = beforeField
+	}
+
+	return beforeFieldUpdated
+}

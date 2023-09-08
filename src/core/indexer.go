@@ -54,8 +54,15 @@ func (indexer Indexer) Start() {
 	FilePaths := indexer.FilePaths
 	part := make([]string, len(FilePaths))
 
+	count := (len(FilePaths) / indexer.Pagination)
+
+	// Si hay residuos aumentamos en uno la cuenta para paginar
+	if (len(FilePaths) % indexer.Pagination) != 0 {
+		count++
+	}
 	// Ciclo con paginacion
-	for i := 0; i <= (len(FilePaths) / indexer.Pagination); i++ {
+	// Hecho de esta manera porque no deseo mutar el array.
+	for i := 0; i < count; i++ {
 		start := i * indexer.Pagination
 		end := (i + 1) * indexer.Pagination
 
@@ -63,8 +70,10 @@ func (indexer Indexer) Start() {
 		// start debe ser menor a la longitud del arreglo
 		// el residuo al dividir entre la paginacion no debe ser 0
 		if end > len(FilePaths) && len(FilePaths)%indexer.Pagination != 0 {
+
 			part = FilePaths[start:]
 		} else if start < len(FilePaths) {
+
 			part = FilePaths[start:end]
 		}
 
@@ -79,12 +88,13 @@ func (indexer Indexer) Start() {
 					log.Fatal(err)
 				}
 
-				mails = append(mails, indexer.Parser.Parse(file))
 				fmt.Println("Parseando: " + part[j])
+				mails = append(mails, indexer.Parser.Parse(file))
 				file.Close()
 			}
 
-			(indexer.Bulker).SetMails(mails)
+			indexer.Bulker.SetMails(mails)
+
 			bulkRequest(indexer.Bulker)
 			mails = nil
 			fmt.Println("---------------------------")
