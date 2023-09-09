@@ -1,7 +1,16 @@
 package routes
 
-import "fmt"
+import (
+	"github.com/FranMT-S/Challenge-Go/src/controller"
+	"github.com/go-chi/chi/v5"
+)
 
-func Route() {
-	fmt.Print("este es un Route")
+func MailRouter() *chi.Mux {
+	router := chi.NewMux()
+
+	router.Route(MAIL_ROUTE, func(r chi.Router) {
+		r.Get("/", controller.GetTotalMessage)
+	})
+
+	return router
 }

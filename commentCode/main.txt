@@ -1,0 +1,19 @@
+
+
+	// // path := "src/db/maildir"
+	// // path := "src/db/maildir/allen-p"
+
+	// // listFiles := ListAllFilesRecursive(path)[:100000]
+	// // listFiles := ListAllFilesQuoteBasic(path)
+	// // listFiles := ListAllFilesQueueSafe(path, 5)
+	// listFiles := []string{"src/db/maildir/beck-s/aec/2"}
+	// // listFiles := []string{"src/db/maildir/arora-h/sent_items/26"}
+	// // listFiles := []string{"src/db/maildir/allen-p/straw/7"}
+
+	// // for _, v := range listFiles {
+	// // 	fmt.Println(v)
+	// // }
+
+	// // indexer := core.Indexer{listFiles, parser.ParserNormal{}, bulker.CreateBulkerV1(), 5000}
+	// indexer := core.Indexer{listFiles, parser.NewParserAsyn(50), bulker.CreateBulkerV1(), 5000}
+	// indexer.Start()

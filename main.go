@@ -12,6 +12,7 @@ import (
 
 	"github.com/FranMT-S/Challenge-Go/src/constants"
 	Helpers "github.com/FranMT-S/Challenge-Go/src/helpers"
+	myServer "github.com/FranMT-S/Challenge-Go/src/server"
 	// "github.com/FranMT-S/Challenge-Go/src/core"
 	// "github.com/FranMT-S/Challenge-Go/src/core/bulker"
 	// "github.com/FranMT-S/Challenge-Go/src/core/parser"
@@ -20,29 +21,8 @@ import (
 func main() {
 	constants.InitializeVarEnviroment()
 
-	createDirectoryIfNotExist()
-
 	startTime := time.Now() // Registra el tiempo de inicio
-
-	// path := "src/db/maildir"
-	// path := "src/db/maildir/allen-p"
-
-	// listFiles := ListAllFilesRecursive(path)[:100000]
-	// listFiles := ListAllFilesQuoteBasic(path)
-	// listFiles := ListAllFilesQueueSafe(path, 5)
-	// listFiles := []string{"src/db/maildir/beck-s/aec/2"}
-	// listFiles := []string{"src/db/maildir/allen-p/straw/7"}
-
-	// for _, v := range listFiles {
-	// 	fmt.Println(v)
-	// }
-
-	// indexer := core.Indexer{listFiles, parser.ParserNormal{}, bulker.CreateBulkerV1(), 5000}
-	// indexer := core.Indexer{listFiles, parser.NewParserAsyn(50), bulker.CreateBulkerV1(), 5000}
-	// indexer.Start()
-
-	_map := map[string]string{}
-	fmt.Printf("el path es:%v \n", _map["test"])
+	myServer.Server().Start()
 
 	endTime := time.Now()
 	duration := endTime.Sub(startTime)
