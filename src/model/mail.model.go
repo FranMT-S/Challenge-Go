@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
+	"time"
 )
 
 // Constantes para el Map
@@ -53,6 +55,26 @@ type Mail struct {
 	Content                   string
 }
 
+func cleanField(s string) string {
+
+	s = strings.ReplaceAll(s, "\r", "")
+	s = strings.ReplaceAll(s, "\n", "")
+	s = strings.TrimSpace(s)
+	return s
+}
+
+func parseDate(s string) string {
+
+	// Parse the date and time string
+
+	t, err := time.Parse("Mon, _2 Jan 2006 15:04:05 -0700 (MST)", s)
+	if err != nil {
+		log.Panic("Error al parsear la fecha:", err)
+	}
+
+	return t.Format("2006-01-02T15:04:05Z")
+}
+
 // Devuelve un string del correo en formato Json
 func (mail Mail) String() string {
 	return mail.ToJson()
@@ -89,23 +111,23 @@ func MailFromJson(_json []byte) Mail {
 func MailFromMap(_map map[string]string) Mail {
 	var mail Mail
 
-	mail.Message_ID = _map[K_MESSAGE_ID]
-	mail.Date = _map[K_DATE]
-	mail.From = _map[K_FROM]
-	mail.To = _map[K_TO]
-	mail.Subject = _map[K_SUBJECT]
-	mail.Cc = _map[K_CC]
-	mail.Mime_Version = _map[K_MIME_VERSION]
-	mail.Content_Type = _map[K_CONTENT_TYPE]
-	mail.Content_Transfer_Encoding = _map[K_CONTENT_TRANSFER_ENCODING]
-	mail.Bcc = _map[K_BCC]
-	mail.X_From = _map[K_X_FROM]
-	mail.X_To = _map[K_X_TO]
-	mail.X_cc = _map[K_X_CC]
-	mail.X_bcc = _map[K_X_BCC]
-	mail.X_Folder = _map[K_X_FOLDER]
-	mail.X_Origin = _map[K_X_ORIGIN]
-	mail.X_FileName = _map[K_X_FILENAME]
+	mail.Message_ID = cleanField(_map[K_MESSAGE_ID])
+	mail.Date = parseDate(cleanField(_map[K_DATE]))
+	mail.From = cleanField(_map[K_FROM])
+	mail.To = cleanField(_map[K_TO])
+	mail.Subject = cleanField(_map[K_SUBJECT])
+	mail.Cc = cleanField(_map[K_CC])
+	mail.Mime_Version = cleanField(_map[K_MIME_VERSION])
+	mail.Content_Type = cleanField(_map[K_CONTENT_TYPE])
+	mail.Content_Transfer_Encoding = cleanField(_map[K_CONTENT_TRANSFER_ENCODING])
+	mail.Bcc = cleanField(_map[K_BCC])
+	mail.X_From = cleanField(_map[K_X_FROM])
+	mail.X_To = cleanField(_map[K_X_TO])
+	mail.X_cc = cleanField(_map[K_X_CC])
+	mail.X_bcc = cleanField(_map[K_X_BCC])
+	mail.X_Folder = cleanField(_map[K_X_FOLDER])
+	mail.X_Origin = cleanField(_map[K_X_ORIGIN])
+	mail.X_FileName = cleanField(_map[K_X_FILENAME])
 	mail.Content = _map[K_CONTENT]
 
 	return mail

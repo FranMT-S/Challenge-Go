@@ -13,6 +13,14 @@ import (
 	model "github.com/FranMT-S/Challenge-Go/src/model"
 )
 
+func cleanField(s string) string {
+
+	s = strings.ReplaceAll(s, "\r", "")
+	s = strings.ReplaceAll(s, "\n", "")
+	s = strings.TrimSpace(s)
+	return s
+}
+
 type lineMail struct {
 	lineFather    *lineMail
 	field         string

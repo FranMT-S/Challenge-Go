@@ -11,8 +11,11 @@ import (
 	"time"
 
 	"github.com/FranMT-S/Challenge-Go/src/constants"
+	"github.com/FranMT-S/Challenge-Go/src/core"
+	"github.com/FranMT-S/Challenge-Go/src/core/bulker"
+	"github.com/FranMT-S/Challenge-Go/src/core/parser"
+	myDatabase "github.com/FranMT-S/Challenge-Go/src/db"
 	Helpers "github.com/FranMT-S/Challenge-Go/src/helpers"
-	myServer "github.com/FranMT-S/Challenge-Go/src/server"
 	// "github.com/FranMT-S/Challenge-Go/src/core"
 	// "github.com/FranMT-S/Challenge-Go/src/core/bulker"
 	// "github.com/FranMT-S/Challenge-Go/src/core/parser"
@@ -21,8 +24,27 @@ import (
 func main() {
 	constants.InitializeVarEnviroment()
 
-	startTime := time.Now() // Registra el tiempo de inicio
-	myServer.Server().Start()
+	// Registra el tiempo de inicio
+	startTime := time.Now()
+	path := "db/test"
+	// // path := "src/db/maildir/allen-p"
+
+	listFiles := ListAllFilesRecursive(path)
+	// // listFiles := ListAllFilesQuoteBasic(path)
+	// // listFiles := ListAllFilesQueueSafe(path, 5)
+	// listFiles := []string{"src/db/maildir/beck-s/aec/2"}
+	// // listFiles := []string{"src/db/maildir/arora-h/sent_items/26"}
+	// // listFiles := []string{"src/db/maildir/allen-p/straw/7"}
+
+	// // for _, v := range listFiles {
+	// // 	fmt.Println(v)
+	// // }
+
+	myDatabase.ZincDatabase().CreateIndex()
+
+	// indexer := core.Indexer{listFiles, parser.ParserNormal{}, bulker.CreateBulkerV1(), 5000}
+	indexer := core.Indexer{listFiles, parser.NewParserAsyn(50), bulker.CreateBulkerV1(), 5000}
+	indexer.Start()
 
 	endTime := time.Now()
 	duration := endTime.Sub(startTime)
