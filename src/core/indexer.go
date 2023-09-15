@@ -88,14 +88,15 @@ func (indexer Indexer) Start() {
 					log.Fatal(err)
 				}
 
-				fmt.Println("Parseando: " + part[j])
+				// fmt.Println("Parseando: " + part[j])
+
 				mails = append(mails, indexer.Parser.Parse(file))
 				file.Close()
 			}
 
 			indexer.Bulker.SetMails(mails)
 
-			bulkRequest(indexer.Bulker)
+			// bulkRequest(indexer.Bulker)
 			mails = nil
 			fmt.Println("---------------------------")
 			fmt.Printf("---------Request %v Finalizada--------\n", i+1)

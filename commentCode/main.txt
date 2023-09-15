@@ -17,3 +17,101 @@
 	// // indexer := core.Indexer{listFiles, parser.ParserNormal{}, bulker.CreateBulkerV1(), 5000}
 	// indexer := core.Indexer{listFiles, parser.NewParserAsyn(50), bulker.CreateBulkerV1(), 5000}
 	// indexer.Start()
+
+
+	
+func ReadLineForLineBufio(file *os.File) {
+
+	defer file.Close()
+	reader := bufio.NewReader(file)
+
+	json, _ := myWriter(true, false)
+	defer json.Close()
+
+	for {
+		lines, err := reader.ReadBytes('\n')
+
+		if err != nil {
+
+			if err == io.EOF {
+				log.Println(err)
+			}
+
+			break
+		}
+
+		json.Write(lines)
+		fmt.Println(string(lines))
+
+	}
+
+}
+
+func ReadLineForLine(file *os.File) {
+
+	defer file.Close()
+	buf := make([]byte, 1024)
+
+	json, _ := myWriter(true, false)
+	defer json.Close()
+
+	for {
+		n, err := file.Read(buf)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		if n > 0 {
+			json.Write(buf[:n])
+			fmt.Println(string(buf[:n]))
+		}
+	}
+}
+
+func ReadLineForLineScanner(file *os.File) {
+
+	defer file.Close()
+
+	json, _ := myWriter(true, false)
+	defer json.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		json.Write(scanner.Bytes())
+		fmt.Println(scanner.Text())
+	}
+}
+
+func myWriter(modeAppend bool, readWrite bool) (*os.File, error) {
+
+	name := "json/data" + time.Now().Format("02_150405") + ".json"
+
+	modes := os.O_CREATE
+	if readWrite {
+		modes |= os.O_RDWR
+	} else {
+		modes |= os.O_WRONLY
+	}
+
+	if modeAppend {
+		modes |= os.O_APPEND
+	} else {
+		modes |= os.O_TRUNC
+	}
+
+	return os.OpenFile(name, modes, 0644)
+
+}
+
+func createDirectoryIfNotExist() {
+	if _, err := os.Stat("json"); errors.Is(err, os.ErrNotExist) {
+		err := os.Mkdir("json", os.ModePerm)
+		if err != nil {
+			log.Println(err)
+		}
+	}
+}

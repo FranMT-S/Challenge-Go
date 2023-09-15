@@ -2,7 +2,6 @@ package parser
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"log"
 	"os"
@@ -69,60 +68,61 @@ func (lineReader *lineByLineReader) Read(line string) {
 
 	if lineReader.mailMap[model.K_X_FILENAME] != "" {
 		lineReader.mailMap[model.K_CONTENT] += line
-	} else if strings.Contains(line, X_FROM) && lineReader.mailMap[model.K_X_FROM] == "" {
+	} else if strings.HasPrefix(line, X_FROM) && lineReader.mailMap[model.K_X_FROM] == "" {
 		lineReader.mailMap[model.K_X_FROM] = line[len(X_FROM):]
 		lineReader.beforeLecture = model.K_X_FROM
-	} else if strings.Contains(line, X_TO) && lineReader.mailMap[model.K_X_TO] == "" {
+	} else if strings.HasPrefix(line, X_TO) && lineReader.mailMap[model.K_X_TO] == "" {
 		lineReader.mailMap[model.K_X_TO] = line[len(X_TO):]
 		lineReader.beforeLecture = model.K_X_TO
-	} else if strings.Contains(line, X_CC) && lineReader.mailMap[model.K_X_CC] == "" {
+	} else if strings.HasPrefix(line, X_CC) && lineReader.mailMap[model.K_X_CC] == "" {
 		lineReader.mailMap[model.K_X_CC] = line[len(X_CC):]
 		lineReader.beforeLecture = model.K_X_CC
-	} else if strings.Contains(line, X_BCC) && lineReader.mailMap[model.K_X_BCC] == "" {
+	} else if strings.HasPrefix(line, X_BCC) && lineReader.mailMap[model.K_X_BCC] == "" {
 		lineReader.mailMap[model.K_X_BCC] = line[len(X_BCC):]
 		lineReader.beforeLecture = model.K_X_BCC
-	} else if strings.Contains(line, X_FOLDER) && lineReader.mailMap[model.K_X_FOLDER] == "" {
+	} else if strings.HasPrefix(line, X_FOLDER) && lineReader.mailMap[model.K_X_FOLDER] == "" {
 		lineReader.mailMap[model.K_X_FOLDER] = line[len(X_FOLDER):]
 		lineReader.beforeLecture = model.K_X_FOLDER
-	} else if strings.Contains(line, X_ORIGIN) && lineReader.mailMap[model.K_X_ORIGIN] == "" {
+	} else if strings.HasPrefix(line, X_ORIGIN) && lineReader.mailMap[model.K_X_ORIGIN] == "" {
 		lineReader.mailMap[model.K_X_ORIGIN] = line[len(X_ORIGIN):]
 		lineReader.beforeLecture = model.K_X_ORIGIN
-	} else if strings.Contains(line, X_FILENAME) && lineReader.mailMap[model.K_X_FILENAME] == "" {
+	} else if strings.HasPrefix(line, X_FILENAME) && lineReader.mailMap[model.K_X_FILENAME] == "" {
 		lineReader.mailMap[model.K_X_FILENAME] = line[len(X_FILENAME):]
 		lineReader.beforeLecture = model.K_X_FILENAME
-	} else if strings.Contains(line, MESSAGE_ID) && lineReader.mailMap[model.K_MESSAGE_ID] == "" {
+	} else if strings.HasPrefix(line, MESSAGE_ID) && lineReader.mailMap[model.K_MESSAGE_ID] == "" {
 		lineReader.mailMap[model.K_MESSAGE_ID] = line[len(MESSAGE_ID):]
 		lineReader.beforeLecture = model.K_MESSAGE_ID
-	} else if strings.Contains(line, DATE) && lineReader.mailMap[model.K_DATE] == "" {
+	} else if strings.HasPrefix(line, DATE) && lineReader.mailMap[model.K_DATE] == "" {
 		lineReader.mailMap[model.K_DATE] = line[len(DATE):]
 		lineReader.beforeLecture = model.K_DATE
-	} else if strings.Contains(line, FROM) && lineReader.mailMap[model.K_FROM] == "" {
+	} else if strings.HasPrefix(line, FROM) && lineReader.mailMap[model.K_FROM] == "" {
 		lineReader.mailMap[model.K_FROM] = line[len(FROM):]
 		lineReader.beforeLecture = model.K_FROM
-	} else if strings.Contains(line, TO) && lineReader.mailMap[model.K_TO] == "" {
+	} else if strings.HasPrefix(line, TO) && lineReader.mailMap[model.K_TO] == "" {
 		lineReader.mailMap[model.K_TO] = line[len(TO):]
 		lineReader.beforeLecture = model.K_TO
-	} else if strings.Contains(line, SUBJECT) && lineReader.mailMap[model.K_SUBJECT] == "" {
+	} else if strings.HasPrefix(line, SUBJECT) && lineReader.mailMap[model.K_SUBJECT] == "" {
 		lineReader.mailMap[model.K_SUBJECT] = line[len(SUBJECT):]
 		lineReader.beforeLecture = model.K_SUBJECT
-	} else if strings.Contains(line, CC) && lineReader.mailMap[model.K_CC] == "" {
+	} else if strings.HasPrefix(line, CC) && lineReader.mailMap[model.K_CC] == "" {
 		lineReader.mailMap[model.K_CC] = line[len(CC):]
 		lineReader.beforeLecture = model.K_CC
-	} else if strings.Contains(line, BCC) && lineReader.mailMap[model.K_BCC] == "" {
+	} else if strings.HasPrefix(line, BCC) && lineReader.mailMap[model.K_BCC] == "" {
 		lineReader.mailMap[model.K_BCC] = line[len(BCC):]
 		lineReader.beforeLecture = model.K_BCC
-	} else if strings.Contains(line, MIME_VERSION) && lineReader.mailMap[model.K_MIME_VERSION] == "" {
+	} else if strings.HasPrefix(line, MIME_VERSION) && lineReader.mailMap[model.K_MIME_VERSION] == "" {
 		lineReader.mailMap[model.K_MIME_VERSION] = line[len(MIME_VERSION):]
 		lineReader.beforeLecture = model.K_MIME_VERSION
-	} else if strings.Contains(line, CONTENT_TYPE) && lineReader.mailMap[model.K_CONTENT_TYPE] == "" {
+	} else if strings.HasPrefix(line, CONTENT_TYPE) && lineReader.mailMap[model.K_CONTENT_TYPE] == "" {
 		lineReader.mailMap[model.K_CONTENT_TYPE] = line[len(CONTENT_TYPE):]
 		lineReader.beforeLecture = model.K_CONTENT_TYPE
-	} else if strings.Contains(line, CONTENT_TRANSFER_ENCODING) && lineReader.mailMap[model.K_CONTENT_TRANSFER_ENCODING] == "" {
+	} else if strings.HasPrefix(line, CONTENT_TRANSFER_ENCODING) && lineReader.mailMap[model.K_CONTENT_TRANSFER_ENCODING] == "" {
 		lineReader.mailMap[model.K_CONTENT_TRANSFER_ENCODING] = line[len(CONTENT_TRANSFER_ENCODING):]
 		lineReader.beforeLecture = model.K_CONTENT_TRANSFER_ENCODING
 	} else if lineReader.beforeLecture != "" {
 		lineReader.mailMap[lineReader.beforeLecture] += line
 	}
+
 }
 
 //
@@ -142,56 +142,56 @@ func (lineReader *lineByLineReaderAsync) Read(line *lineMail) {
 	if lineReader.headLineFlag > 0 && lineReader.headLineFlag < line.numberLine {
 		line.data = line.lineToAnalize
 		line.field = model.K_CONTENT
-	} else if strings.Contains(line.lineToAnalize, X_FROM) {
+	} else if strings.HasPrefix(line.lineToAnalize, X_FROM) {
 		line.data = line.lineToAnalize[len(X_FROM):]
 		line.field = model.K_X_FROM
-	} else if strings.Contains(line.lineToAnalize, X_TO) {
+	} else if strings.HasPrefix(line.lineToAnalize, X_TO) {
 		line.data = line.lineToAnalize[len(X_TO):]
 		line.field = model.K_X_TO
-	} else if strings.Contains(line.lineToAnalize, X_CC) {
+	} else if strings.HasPrefix(line.lineToAnalize, X_CC) {
 		line.data = line.lineToAnalize[len(X_CC):]
 		line.field = model.K_X_CC
-	} else if strings.Contains(line.lineToAnalize, X_BCC) {
+	} else if strings.HasPrefix(line.lineToAnalize, X_BCC) {
 		line.data = line.lineToAnalize[len(X_BCC):]
 		line.field = model.K_X_BCC
-	} else if strings.Contains(line.lineToAnalize, X_FOLDER) {
+	} else if strings.HasPrefix(line.lineToAnalize, X_FOLDER) {
 		line.data = line.lineToAnalize[len(X_FOLDER):]
 		line.field = model.K_X_FOLDER
-	} else if strings.Contains(line.lineToAnalize, X_ORIGIN) {
+	} else if strings.HasPrefix(line.lineToAnalize, X_ORIGIN) {
 		line.data = line.lineToAnalize[len(X_ORIGIN):]
 		line.field = model.K_X_ORIGIN
-	} else if strings.Contains(line.lineToAnalize, X_FILENAME) {
+	} else if strings.HasPrefix(line.lineToAnalize, X_FILENAME) {
 		line.data = line.lineToAnalize[len(X_FILENAME):]
 		line.field = model.K_X_FILENAME
 		lineReader.headLineFlag = line.numberLine
-	} else if strings.Contains(line.lineToAnalize, MESSAGE_ID) {
+	} else if strings.HasPrefix(line.lineToAnalize, MESSAGE_ID) {
 		line.data = line.lineToAnalize[len(MESSAGE_ID):]
 		line.field = model.K_MESSAGE_ID
-	} else if strings.Contains(line.lineToAnalize, DATE) {
+	} else if strings.HasPrefix(line.lineToAnalize, DATE) {
 		line.data = line.lineToAnalize[len(DATE):]
 		line.field = model.K_DATE
-	} else if strings.Contains(line.lineToAnalize, FROM) {
+	} else if strings.HasPrefix(line.lineToAnalize, FROM) {
 		line.data = line.lineToAnalize[len(FROM):]
 		line.field = model.K_FROM
-	} else if strings.Contains(line.lineToAnalize, TO) {
+	} else if strings.HasPrefix(line.lineToAnalize, TO) {
 		line.data = line.lineToAnalize[len(TO):]
 		line.field = model.K_TO
-	} else if strings.Contains(line.lineToAnalize, SUBJECT) {
+	} else if strings.HasPrefix(line.lineToAnalize, SUBJECT) {
 		line.data = line.lineToAnalize[len(SUBJECT):]
 		line.field = model.K_SUBJECT
-	} else if strings.Contains(line.lineToAnalize, CC) {
+	} else if strings.HasPrefix(line.lineToAnalize, CC) {
 		line.data = line.lineToAnalize[len(CC):]
 		line.field = model.K_CC
-	} else if strings.Contains(line.lineToAnalize, BCC) {
+	} else if strings.HasPrefix(line.lineToAnalize, BCC) {
 		line.data = line.lineToAnalize[len(BCC):]
 		line.field = model.K_BCC
-	} else if strings.Contains(line.lineToAnalize, MIME_VERSION) {
+	} else if strings.HasPrefix(line.lineToAnalize, MIME_VERSION) {
 		line.data = line.lineToAnalize[len(MIME_VERSION):]
 		line.field = model.K_MIME_VERSION
-	} else if strings.Contains(line.lineToAnalize, CONTENT_TYPE) {
+	} else if strings.HasPrefix(line.lineToAnalize, CONTENT_TYPE) {
 		line.data = line.lineToAnalize[len(CONTENT_TYPE):]
 		line.field = model.K_CONTENT_TYPE
-	} else if strings.Contains(line.lineToAnalize, CONTENT_TRANSFER_ENCODING) {
+	} else if strings.HasPrefix(line.lineToAnalize, CONTENT_TRANSFER_ENCODING) {
 		line.data = line.lineToAnalize[len(CONTENT_TRANSFER_ENCODING):]
 		line.field = model.K_CONTENT_TRANSFER_ENCODING
 	} else {
@@ -280,7 +280,7 @@ type parserAsync struct {
 /*
 Parseador Asincrono acepta un valor que especifica el limite de lineas que leera al mismo tiempo
 
-Maximo 25 hilos. Minimo 1.
+Maximo 50 hilos. Minimo 1.
 
 -1 Para usarlo sin limite de hilos pero deberia evitarse.
 */
@@ -295,8 +295,8 @@ func (parser parserAsync) Parse(file *os.File) model.Mail {
 	var wg sync.WaitGroup
 	var semaphore chan struct{}
 
-	if parser.maxConcurrent > 35 {
-		parser.maxConcurrent = 35
+	if parser.maxConcurrent > 50 {
+		parser.maxConcurrent = 50
 	} else if parser.maxConcurrent <= 0 {
 		parser.maxConcurrent = 1
 	}
@@ -336,7 +336,6 @@ func (parser parserAsync) Parse(file *os.File) model.Mail {
 			}
 			if err != io.EOF {
 				log.Println("Error al parserar el archivo: ", file.Name())
-
 			}
 			break
 		}
@@ -368,23 +367,87 @@ Parseador con Regex
 Usa Expresiones Regulares para parsear el contenido
 */
 
-type ParserWithRegex struct{}
+type ParserAsyncSplit struct {
+	maxConcurrent int
+}
 
-func (parser ParserWithRegex) Parse(file *os.File) model.Mail {
-	// buf := make([]byte, 1024)
-	mail := model.Mail{}
+func NewParserAsyncSpliter(_maxConcurrent int) *ParserAsyncSplit {
+	return &ParserAsyncSplit{maxConcurrent: _maxConcurrent}
+}
+
+func (parser ParserAsyncSplit) Parse(file *os.File) model.Mail {
+
+	var mail model.Mail
+	var mailMap map[string]string
+	var wg sync.WaitGroup
+	var semaphore chan struct{}
+	lineByLineReaderAsync := newLineByLineReaderAsync()
+
+	if parser.maxConcurrent > 50 {
+		parser.maxConcurrent = 50
+	} else if parser.maxConcurrent <= 0 {
+		parser.maxConcurrent = 1
+	}
+
+	semaphore = make(chan struct{}, parser.maxConcurrent)
 
 	bytes, err := io.ReadAll(file)
 	if err != nil {
 		log.Fatal(err)
 	}
-	data := string(bytes)
-	// fmt.Println(data)
-	var valid = regexp.MustCompile("^(?P<From>\n?From:.+\n)")
 
-	fmt.Printf("%#v\n", data)
-	fmt.Printf("%#v\n", valid.FindStringSubmatch(data))
-	fmt.Printf("%#v\n", valid.SubexpNames())
+	re, _ := regexp.Compile(`X-FileName:.+\n{1,}`)
+
+	content := string(bytes)
+
+	index := re.FindStringIndex(content)
+	endIndex := index[1]
+
+	dataReader := strings.NewReader(content[:endIndex])
+	reader := bufio.NewReader(dataReader)
+
+	for {
+		lineByte, err := reader.ReadBytes('\n')
+		line := string(lineByte)
+
+		var _newLineMail *lineMail
+
+		if lineByLineReaderAsync.line == nil {
+			lineByLineReaderAsync.line = newLineMail(nil, line, 0)
+			_newLineMail = lineByLineReaderAsync.line
+		} else {
+			_newLineMail = newLineMail(lineByLineReaderAsync.line, line, lineByLineReaderAsync.line.numberLine+1)
+			lineByLineReaderAsync.line = _newLineMail
+		}
+
+		if err != nil {
+
+			if err != io.EOF {
+				log.Println("Error al parserar el archivo: ", file.Name())
+			}
+			break
+		}
+
+		wg.Add(1)
+		semaphore <- struct{}{}
+		// fmt.Println("Entrando: ", line)
+		go func() {
+			defer wg.Done()
+			lineByLineReaderAsync.Read(_newLineMail)
+			// fmt.Println("Saliendo: ", line)
+			<-semaphore
+
+		}()
+	}
+
+	wg.Wait()
+	close(semaphore)
+
+	mailMap = lineByLineReaderAsync.getMapData()
+
+	mailMap[model.K_CONTENT] = content[:endIndex]
+	mail = model.MailFromMap(mailMap)
+	// fmt.Println(mail.ToJsonIndent())
 
 	return mail
 }

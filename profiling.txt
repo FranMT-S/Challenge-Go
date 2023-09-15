@@ -1,0 +1,11 @@
+go test -cpuprofile cpu.prof -memprofile mem.prof -bench .
+
+
+///
+go tool pprof cpu.prof
+
+go test -cpuprofile cpu.prof -memprofile mem.prof -bench .
+go test -cpuprofile cpu.prof -memprofile mem.prof -benchtime  60s -bench .
+
+
+ go tool pprof -http=":8000" pprofbin ./cpu.prof

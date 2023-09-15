@@ -92,9 +92,24 @@ func (mail Mail) ToJson() string {
 	return string(bytes)
 }
 
+func (mail Mail) ToJsonIndent() string {
+	bytes, err := mail.ToJsonBytesIndent()
+
+	if err != nil {
+		log.Println(err)
+		return ""
+	}
+
+	return string(bytes)
+}
+
 // Transforma el correo a Json pero devuelve los datos en un arreglo de bytes
 func (mail Mail) ToJsonBytes() ([]byte, error) {
 	return json.Marshal(mail)
+}
+
+func (mail Mail) ToJsonBytesIndent() ([]byte, error) {
+	return json.MarshalIndent(mail, "", " ")
 }
 
 func MailFromJson(_json []byte) Mail {
