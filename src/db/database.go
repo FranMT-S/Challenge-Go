@@ -249,3 +249,34 @@ func (db zincDatabase) CreateIndex() {
 		fmt.Println(string(body))
 	}
 }
+
+func BulkRequest(command, mailsData string) {
+
+	url := os.Getenv("URL") + command
+
+	data := strings.NewReader(mailsData)
+
+	req, err := http.NewRequest("POST", url, data)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	myMiddleware.ZincHeader(req)
+
+	resp, err := http.DefaultClient.Do(req)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer resp.Body.Close()
+
+	log.Println(resp.StatusCode)
+	body, err := io.ReadAll(resp.Body)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(string(body))
+}

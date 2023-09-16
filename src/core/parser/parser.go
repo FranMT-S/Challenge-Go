@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"time"
 
 	model "github.com/FranMT-S/Challenge-Go/src/model"
 )
@@ -18,6 +19,18 @@ func cleanField(s string) string {
 	s = strings.ReplaceAll(s, "\n", "")
 	s = strings.TrimSpace(s)
 	return s
+}
+
+func parseDate(s string) string {
+
+	// Parse the date and time string
+
+	t, err := time.Parse("Mon, _2 Jan 2006 15:04:05 -0700 (MST)", s)
+	if err != nil {
+		log.Panic("Error al parsear la fecha:", err)
+	}
+
+	return t.Format("2006-01-02T15:04:05Z")
 }
 
 type lineMail struct {
@@ -361,7 +374,7 @@ func (parser parserAsync) Parse(file *os.File) model.Mail {
 
 /*
 --------------------
-Parseador con Regex
+Parseador con Split
 --------------------
 
 Usa Expresiones Regulares para parsear el contenido
@@ -448,6 +461,139 @@ func (parser ParserAsyncSplit) Parse(file *os.File) model.Mail {
 	mailMap[model.K_CONTENT] = content[:endIndex]
 	mail = model.MailFromMap(mailMap)
 	// fmt.Println(mail.ToJsonIndent())
+
+	return mail
+}
+
+/*
+--------------------
+Parseador con Split
+--------------------
+
+Usa Expresiones Regulares para parsear el contenido
+*/
+
+type ParserAsyncRegex struct {
+	maxConcurrent int
+}
+
+func NewParserAsyncRegex(_maxConcurrent int) *ParserAsyncRegex {
+	return &ParserAsyncRegex{maxConcurrent: _maxConcurrent}
+}
+
+func (parser ParserAsyncRegex) Parse(file *os.File) model.Mail {
+
+	var mail model.Mail
+	var wg sync.WaitGroup
+	var semaphore chan struct{}
+	var mutex = &sync.Mutex{}
+
+	mailMap := map[string]string{}
+	indexMap := map[int]string{}
+	noMatchMap := map[int]string{}
+	i := -1
+
+	// lineByLineReaderAsync := newLineByLineReaderAsync()
+
+	if parser.maxConcurrent > 50 {
+		parser.maxConcurrent = 50
+	} else if parser.maxConcurrent <= 0 {
+		parser.maxConcurrent = 1
+	}
+
+	semaphore = make(chan struct{}, parser.maxConcurrent)
+
+	bytes, err := io.ReadAll(file)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	re, _ := regexp.Compile(`X-FileName:.+\n{1,}`)
+	reLine, _ := regexp.Compile(`^([\w-_]+:)(.+)\n`)
+
+	content := string(bytes)
+	index := re.FindStringIndex(content)
+	endIndex := index[1]
+
+	header := strings.TrimSpace(content[:endIndex])
+	body := strings.TrimSpace(content[endIndex:])
+
+	dataReader := strings.NewReader(header)
+	reader := bufio.NewReader(dataReader)
+
+	for {
+		lineByte, err := reader.ReadBytes('\n')
+		line := string(lineByte)
+
+		if err != nil {
+
+			if err != io.EOF {
+				log.Println("Error al parserar el archivo: ", file.Name())
+			}
+			break
+		}
+
+		i++
+		indexLine := i
+
+		wg.Add(1)
+		semaphore <- struct{}{}
+		// fmt.Println("Entrando: ", line)
+		go func() {
+			defer wg.Done()
+			match := reLine.FindStringSubmatch(line)
+			if len(match) > 0 {
+				// match[1] el campo, match[2] el contenido del campo
+				mutex.Lock()
+				mailMap[match[1]] = match[2]
+				indexMap[indexLine] = match[1]
+				mutex.Unlock()
+			} else {
+				// El campo sera el de la linea anterior
+				mutex.Lock()
+				indexMap[indexLine] = ""
+				noMatchMap[indexLine] = line
+				mutex.Unlock()
+			}
+
+			<-semaphore
+
+		}()
+	}
+
+	wg.Wait()
+	close(semaphore)
+
+	for j := 0; j <= i; j++ {
+
+		if indexMap[j] == "" {
+			indexMap[j] = indexMap[j-1]
+			mailMap[indexMap[j]] += noMatchMap[j]
+		}
+	}
+
+	// Corregis los campos que no hicieron match
+
+	// mailMap = lineByLineReaderAsync.getMapData()
+
+	mail.Message_ID = cleanField(mailMap[MESSAGE_ID])
+	mail.Date = parseDate(cleanField(mailMap[DATE]))
+	mail.From = cleanField(mailMap[FROM])
+	mail.To = cleanField(mailMap[TO])
+	mail.Subject = cleanField(mailMap[SUBJECT])
+	mail.Cc = cleanField(mailMap[CC])
+	mail.Mime_Version = cleanField(mailMap[MIME_VERSION])
+	mail.Content_Type = cleanField(mailMap[CONTENT_TYPE])
+	mail.Content_Transfer_Encoding = cleanField(mailMap[CONTENT_TRANSFER_ENCODING])
+	mail.Bcc = cleanField(mailMap[BCC])
+	mail.X_From = cleanField(mailMap[X_FROM])
+	mail.X_To = cleanField(mailMap[X_TO])
+	mail.X_cc = cleanField(mailMap[X_CC])
+	mail.X_bcc = cleanField(mailMap[X_BCC])
+	mail.X_Folder = cleanField(mailMap[X_FOLDER])
+	mail.X_Origin = cleanField(mailMap[X_ORIGIN])
+	mail.X_FileName = cleanField(mailMap[X_FILENAME])
+	mail.Content = body
 
 	return mail
 }

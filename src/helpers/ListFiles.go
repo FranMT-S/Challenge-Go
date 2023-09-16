@@ -32,7 +32,6 @@ func ListAllFilesRecursive(path string) (files []string) {
 }
 
 func ListAllFilesQuoteBasic(path string) (files []string) {
-
 	_, err := os.ReadDir(path)
 	if err != nil {
 		fmt.Println("no se encontro el directorio: " + path)
@@ -62,6 +61,42 @@ func ListAllFilesQuoteBasic(path string) (files []string) {
 
 	return files
 }
+
+//
+
+func ListAllFilesQuoteChannel(path string, ch chan string) {
+	_, err := os.ReadDir(path)
+	if err != nil {
+		fmt.Println("no se encontro el directorio: " + path)
+		return
+	}
+
+	quoteBasic := NewQueueBasic()
+	quoteBasic.Push(path)
+
+	for {
+		currentPath := quoteBasic.Poll()
+		if currentPath == "" {
+			break
+		}
+
+		directorys, _ := os.ReadDir(currentPath)
+		for _, dir := range directorys {
+			newPath := currentPath + "/" + dir.Name()
+			if dir.IsDir() {
+				quoteBasic.Push(newPath)
+			} else {
+				ch <- newPath
+			}
+		}
+
+	}
+
+	close(ch)
+
+}
+
+//
 
 func ListAllFilesIterative(path string) (files []string) {
 

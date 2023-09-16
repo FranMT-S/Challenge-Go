@@ -19,26 +19,25 @@ func BenchmarkIndexerParserNormal(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 
 		indexer := core.Indexer{
-			FilePaths:  listFilesParser,
+
 			Parser:     parser.ParserNormal{},
 			Bulker:     bulker.CreateBulkerV1(),
 			Pagination: 5000,
 		}
 
-		indexer.Start()
+		indexer.StartFromArray(listFilesParser)
 	}
 }
 func BenchmarkIndexerParserAsync(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		indexer := core.Indexer{
-			FilePaths:  listFilesParser,
 			Parser:     parser.NewParserAsyn(50),
 			Bulker:     bulker.CreateBulkerV1(),
 			Pagination: 5000,
 		}
 
-		indexer.Start()
+		indexer.StartFromArray(listFilesParser)
 	}
 }
 
@@ -46,12 +45,24 @@ func BenchmarkIndexerParserAsyncSpliter(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		indexer := core.Indexer{
-			FilePaths:  listFilesParser,
 			Parser:     parser.NewParserAsyncSpliter(50),
 			Bulker:     bulker.CreateBulkerV1(),
 			Pagination: 5000,
 		}
 
-		indexer.Start()
+		indexer.StartFromArray(listFilesParser)
+	}
+}
+
+func BenchmarkIndexerParserAsyncRegex(b *testing.B) {
+
+	for i := 0; i < b.N; i++ {
+		indexer := core.Indexer{
+			Parser:     parser.NewParserAsyncRegex(50),
+			Bulker:     bulker.CreateBulkerV2(),
+			Pagination: 5000,
+		}
+
+		indexer.StartFromArray(listFilesParser)
 	}
 }

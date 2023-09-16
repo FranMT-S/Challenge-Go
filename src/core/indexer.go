@@ -2,14 +2,13 @@ package core
 
 import (
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"os"
-	"strings"
+	"sync"
 
 	"github.com/FranMT-S/Challenge-Go/src/core/bulker"
 	"github.com/FranMT-S/Challenge-Go/src/core/parser"
+	Helpers "github.com/FranMT-S/Challenge-Go/src/helpers"
 	"github.com/FranMT-S/Challenge-Go/src/model"
 )
 
@@ -27,13 +26,12 @@ import (
 */
 
 type Indexer struct {
-	FilePaths  []string
 	Parser     parser.IParserMail
 	Bulker     bulker.IBulker
 	Pagination int
 }
 
-func (indexer Indexer) Start() {
+func (indexer Indexer) StartFromArray(FilePaths []string) {
 
 	if indexer.Pagination == 0 {
 		indexer.Pagination = 1000
@@ -47,19 +45,40 @@ func (indexer Indexer) Start() {
 		panic("Debe inicializar el campo Bulker")
 	}
 
-	if indexer.FilePaths == nil || len(indexer.FilePaths) == 0 {
+	if len(FilePaths) == 0 {
 		panic("El arreglo no tiene datos")
 	}
+	indexer.work(FilePaths)
+}
 
-	FilePaths := indexer.FilePaths
+func (indexer Indexer) Start(path string) {
+
+	if indexer.Pagination == 0 {
+		indexer.Pagination = 1000
+	}
+
+	if indexer.Parser == nil {
+		panic("Debe inicializar el campo Parse")
+	}
+
+	if indexer.Bulker == nil {
+		panic("Debe inicializar el campo Bulker")
+	}
+
+	FilePaths := Helpers.ListAllFilesQuoteBasic(path)
+	indexer.work(FilePaths)
+}
+
+func (indexer Indexer) work(FilePaths []string) {
+
 	part := make([]string, len(FilePaths))
-
 	count := (len(FilePaths) / indexer.Pagination)
 
 	// Si hay residuos aumentamos en uno la cuenta para paginar
 	if (len(FilePaths) % indexer.Pagination) != 0 {
 		count++
 	}
+
 	// Ciclo con paginacion
 	// Hecho de esta manera porque no deseo mutar el array.
 	for i := 0; i < count; i++ {
@@ -70,10 +89,8 @@ func (indexer Indexer) Start() {
 		// start debe ser menor a la longitud del arreglo
 		// el residuo al dividir entre la paginacion no debe ser 0
 		if end > len(FilePaths) && len(FilePaths)%indexer.Pagination != 0 {
-
 			part = FilePaths[start:]
 		} else if start < len(FilePaths) {
-
 			part = FilePaths[start:end]
 		}
 
@@ -88,15 +105,14 @@ func (indexer Indexer) Start() {
 					log.Fatal(err)
 				}
 
-				// fmt.Println("Parseando: " + part[j])
+				fmt.Println("Parseando: " + part[j])
 
 				mails = append(mails, indexer.Parser.Parse(file))
 				file.Close()
 			}
 
-			indexer.Bulker.SetMails(mails)
+			indexer.Bulker.Bulk(mails)
 
-			// bulkRequest(indexer.Bulker)
 			mails = nil
 			fmt.Println("---------------------------")
 			fmt.Printf("---------Request %v Finalizada--------\n", i+1)
@@ -105,37 +121,60 @@ func (indexer Indexer) Start() {
 	}
 }
 
-func bulkRequest(bulker bulker.IBulker) {
+func (indexer Indexer) StartAsync(path string, maxConcurrent int) {
 
-	url := os.Getenv("URL") + bulker.GetCommand()
-	bulker.Bulk()
-
-	data := strings.NewReader(bulker.GetData())
-
-	req, err := http.NewRequest("POST", url, data)
-	if err != nil {
-		log.Fatal(err)
+	if maxConcurrent < 0 {
+		maxConcurrent = 1
+	} else if maxConcurrent > 10 {
+		maxConcurrent = 10
 	}
 
-	req.SetBasicAuth(os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36")
+	pathCh := make(chan string)
+	mutex := new(sync.Mutex)
+	wg := new(sync.WaitGroup)
 
-	resp, err := http.DefaultClient.Do(req)
-
-	if err != nil {
-		log.Fatal(err)
+	for i := 0; i < maxConcurrent; i++ {
+		wg.Add(1)
+		go indexer.workAsync(pathCh, mutex, wg, i+1)
 	}
 
-	defer resp.Body.Close()
+	Helpers.ListAllFilesQuoteChannel(path, pathCh)
+	wg.Wait()
+}
 
-	log.Println(resp.StatusCode)
-	body, err := io.ReadAll(resp.Body)
+func (indexer Indexer) workAsync(pathCh chan string, mutex *sync.Mutex, wg *sync.WaitGroup, id int) {
+	defer wg.Done()
 
-	if err != nil {
-		log.Fatal(err)
+	NumRequest := 0
+	// part := make([]string, indexer.Pagination)
+	var mailList []model.Mail
+	for path := range pathCh {
+		file, err := os.Open(path)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("Worker %v parseando: %v\n", id, path)
+
+		mailList = append(mailList, indexer.Parser.Parse(file))
+		file.Close()
+
+		if len(mailList) == indexer.Pagination {
+			mutex.Lock()
+			indexer.Bulker.Bulk(mailList)
+			fmt.Println("---------------------------")
+			fmt.Printf("--Worker %v, Request %v Finalizada--------\n", id, NumRequest)
+			fmt.Println("---------------------------")
+			mailList = nil
+			NumRequest++
+			mutex.Unlock()
+		}
 	}
 
-	fmt.Println(string(body))
-
+	// Si quedaron pendientes
+	if len(mailList)%indexer.Pagination != 0 {
+		mutex.Lock()
+		indexer.Bulker.Bulk(mailList)
+		mutex.Unlock()
+		mailList = nil
+	}
 }

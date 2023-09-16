@@ -6,14 +6,9 @@ import (
 	"log"
 	"os"
 
+	myDatabase "github.com/FranMT-S/Challenge-Go/src/db"
 	model "github.com/FranMT-S/Challenge-Go/src/model"
 )
-
-// Formato para el Request Bulker V1
-type bulkResponse struct {
-	Index   string
-	Records []model.Mail
-}
 
 // GetCommand - comando que se usara en el Request
 // GetData - Obtener los datos usarse despues de un bulk
@@ -22,38 +17,8 @@ type bulkResponse struct {
 // Bulk - Transforma los correos en el formato que usare el Request al subir los datos.
 type IBulker interface {
 	GetCommand() string
-	GetData() string
-	SetMails(mails []model.Mail)
-	GetMails() []model.Mail
-	Bulk()
+	Bulk(mails []model.Mail)
 }
-
-/*
-Bulker estructura que heredaran los Bulker Concretos, simula una clase abstracta
-no instanciar y usar por si sola.
-*/
-type Bulker struct {
-	mails []model.Mail
-	data  string
-}
-
-func (bulk Bulker) GetCommand() string {
-	return ""
-}
-
-func (bulk Bulker) GetData() string {
-	return bulk.data
-}
-
-func (bulk Bulker) GetMails() []model.Mail {
-	return bulk.mails
-}
-
-func (bulk *Bulker) SetMails(mails []model.Mail) {
-	bulk.mails = mails
-}
-
-func (bulk Bulker) Bulk() {}
 
 /*
 -----------------------------------
@@ -62,37 +27,35 @@ Section Bulker V1
 */
 
 type BulkerV1 struct {
-	Bulker
 }
 
 func (bulk BulkerV1) GetCommand() string {
-	return "_bulkv2"
+	return "_bulk"
 }
 
-func (bulk *BulkerV1) Bulk() {
-	bulkResponse := bulkResponse{os.Getenv("INDEX"), bulk.GetMails()}
-	json, err := json.Marshal(bulkResponse)
+func (bulk BulkerV1) Bulk(mails []model.Mail) {
+	index := fmt.Sprintf(`{ "index" : { "_index" : "%v" } }  `, os.Getenv("INDEX"))
+	json := ""
 
-	if err != nil {
-		log.Println(err)
+	for i := 0; i < len(mails); i++ {
+		json += index + "\n"
+		json += mails[i].String() + "\n"
 	}
 
-	bulk.data = string(json)
+	myDatabase.BulkRequest(bulk.GetCommand(), json)
 }
 
 /*
 Tiene un funcion con pointer receiver por lo que es necesario
 retornar un puntero para que la interface IBulker lo acepte
 */
-func CreateBulkerV1() *BulkerV1 {
-	var b Bulker
-
-	return &BulkerV1{b}
+func CreateBulkerV1() BulkerV1 {
+	return BulkerV1{}
 }
 
 /*
 -----------------------------------
-End Section Bulker V1
+End Bulker V1
 -----------------------------------
 */
 
@@ -102,38 +65,42 @@ Section Bulker V2
 -----------------------------------
 */
 
+// Formato para el Request Bulker V2
+type bulkResponse struct {
+	Index   string
+	Records []model.Mail
+}
+
 type BulkerV2 struct {
-	Bulker
 }
 
 func (bulk BulkerV2) GetCommand() string {
-	return "_bulk"
+	return "_bulkv2"
 }
 
-func (bulk *BulkerV2) Bulk() {
-	index := fmt.Sprintf(`{ "index" : { "_index" : "%v" } }  `, os.Getenv("INDEX"))
-	json := ""
-	mails := bulk.GetMails()
-	for i := 0; i < len(mails); i++ {
-		json += index + "\n"
-		json += mails[i].String() + "\n"
+func (bulk BulkerV2) Bulk(mails []model.Mail) {
+	bulkResponse := bulkResponse{
+		Index:   os.Getenv("INDEX"),
+		Records: mails}
+
+	json, err := json.Marshal(bulkResponse)
+	if err != nil {
+		log.Println(err)
 	}
 
-	bulk.data = json
+	myDatabase.BulkRequest(bulk.GetCommand(), string(json))
 }
 
 /*
 Tiene un funcion con pointer receiver por lo que es necesario
 retornar un puntero para que la interface IBulker lo acepte
 */
-func CreateBulkerV2() *BulkerV2 {
-	var b Bulker
-
-	return &BulkerV2{b}
+func CreateBulkerV2() BulkerV2 {
+	return BulkerV2{}
 }
 
 /*
 -----------------------------------
-End Bulker V2
+End Section Bulker V2
 -----------------------------------
 */
