@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/FranMT-S/Challenge-Go/src/constants"
 	"github.com/FranMT-S/Challenge-Go/src/core"
 	"github.com/FranMT-S/Challenge-Go/src/core/bulker"
@@ -13,7 +16,7 @@ func main() {
 	constants.InitializeVarEnviroment()
 
 	// Registra el tiempo de inicio
-	// startTime := time.Now()
+	startTime := time.Now()
 
 	// // path := "src/db/maildir/allen-p"
 
@@ -61,12 +64,14 @@ func main() {
 		Pagination: 10,
 	}
 
-	indexer.Start(`db/maildir/arora-h/`)
+	// indexer.Start(`db/Testformat`)
+	// indexer.StartFromArray(listFiles)
 	// indexer.StartAsync(`db/maildir/arora-h`, 5)
+	indexer.StartAsync(`db/Testformat`, 5)
 
-	// endTime := time.Now()
-	// duration := endTime.Sub(startTime)
-	// seconds := duration.Seconds()
+	endTime := time.Now()
+	duration := endTime.Sub(startTime)
+	seconds := duration.Seconds()
 
-	// fmt.Printf("El código se ejecutó en %.2f segundos\n", seconds)
+	fmt.Printf("El código se ejecutó en %.2f segundos\n", seconds)
 }

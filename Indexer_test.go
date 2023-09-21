@@ -32,7 +32,7 @@ func BenchmarkIndexerParserAsync(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		indexer := core.Indexer{
-			Parser:     parser.NewParserAsyn(50),
+			Parser:     parser.NewParserAsync(50),
 			Bulker:     bulker.CreateBulkerV1(),
 			Pagination: 5000,
 		}

@@ -153,28 +153,33 @@ func (indexer Indexer) workAsync(pathCh chan string, mutex *sync.Mutex, wg *sync
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("Worker %v parseando: %v\n", id, path)
+		fmt.Printf("\rWorker %v parseando: %v", id, path)
+		// fmt.Printf("Worker %v parseando: %v\n", id, path)
 
 		mailList = append(mailList, indexer.Parser.Parse(file))
 		file.Close()
 
 		if len(mailList) == indexer.Pagination {
-			mutex.Lock()
-			indexer.Bulker.Bulk(mailList)
-			fmt.Println("---------------------------")
-			fmt.Printf("--Worker %v, Request %v Finalizada--------\n", id, NumRequest)
-			fmt.Println("---------------------------")
+			indexer.safeRequest(mailList, mutex, id, NumRequest)
 			mailList = nil
 			NumRequest++
-			mutex.Unlock()
 		}
 	}
 
 	// Si quedaron pendientes
 	if len(mailList)%indexer.Pagination != 0 {
-		mutex.Lock()
-		indexer.Bulker.Bulk(mailList)
-		mutex.Unlock()
+		indexer.safeRequest(mailList, mutex, id, NumRequest)
 		mailList = nil
+
 	}
+}
+
+func (indexer Indexer) safeRequest(mailList []model.Mail, mutex *sync.Mutex, id int, NumRequest int) {
+	mutex.Lock()
+	indexer.Bulker.Bulk(mailList)
+	fmt.Println("---------------------------")
+	fmt.Printf("--Worker %v, Request %v Finalizada--------\n", id, NumRequest)
+	fmt.Println("---------------------------")
+
+	mutex.Unlock()
 }

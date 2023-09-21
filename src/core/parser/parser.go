@@ -2,6 +2,7 @@ package parser
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -17,6 +18,7 @@ func cleanField(s string) string {
 
 	s = strings.ReplaceAll(s, "\r", "")
 	s = strings.ReplaceAll(s, "\n", "")
+	s = strings.ReplaceAll(s, "\t", "")
 	s = strings.TrimSpace(s)
 	return s
 }
@@ -260,13 +262,9 @@ func (parser ParserNormal) Parse(file *os.File) model.Mail {
 	// beforeLine := ""
 	for {
 		lineByte, err := reader.ReadBytes('\n')
+		line := string(lineByte)
+		if err != nil && len(line) <= 0 {
 
-		if err != nil {
-			line := string(lineByte)
-			if len(line) > 0 {
-				lineByLineReader.Read(line)
-
-			}
 			if err != io.EOF {
 				log.Println("Error al parserar el archivo: ", file.Name())
 
@@ -274,7 +272,6 @@ func (parser ParserNormal) Parse(file *os.File) model.Mail {
 			break
 		}
 
-		line := string(lineByte)
 		lineByLineReader.Read(line)
 
 	}
@@ -297,7 +294,7 @@ Maximo 50 hilos. Minimo 1.
 
 -1 Para usarlo sin limite de hilos pero deberia evitarse.
 */
-func NewParserAsyn(_maxConcurrent int) *parserAsync {
+func NewParserAsync(_maxConcurrent int) *parserAsync {
 	return &parserAsync{maxConcurrent: _maxConcurrent}
 }
 
@@ -333,20 +330,8 @@ func (parser parserAsync) Parse(file *os.File) model.Mail {
 			lineByLineReaderAsync.line = _newLineMail
 		}
 
-		if err != nil {
+		if err != nil && len(line) <= 0 {
 
-			// En caso de que quede una ultima linea sin salto de linea
-			if len(line) > 0 {
-				wg.Add(1)
-
-				semaphore <- struct{}{}
-				go func() {
-					defer wg.Done()
-					lineByLineReaderAsync.Read(_newLineMail)
-					<-semaphore
-				}()
-
-			}
 			if err != io.EOF {
 				log.Println("Error al parserar el archivo: ", file.Name())
 			}
@@ -423,6 +408,14 @@ func (parser ParserAsyncSplit) Parse(file *os.File) model.Mail {
 		lineByte, err := reader.ReadBytes('\n')
 		line := string(lineByte)
 
+		if err != nil && len(line) <= 0 {
+
+			if err != io.EOF {
+				log.Println("Error al parserar el archivo: ", file.Name())
+			}
+			break
+		}
+
 		var _newLineMail *lineMail
 
 		if lineByLineReaderAsync.line == nil {
@@ -433,21 +426,13 @@ func (parser ParserAsyncSplit) Parse(file *os.File) model.Mail {
 			lineByLineReaderAsync.line = _newLineMail
 		}
 
-		if err != nil {
-
-			if err != io.EOF {
-				log.Println("Error al parserar el archivo: ", file.Name())
-			}
-			break
-		}
-
 		wg.Add(1)
 		semaphore <- struct{}{}
-		// fmt.Println("Entrando: ", line)
+
 		go func() {
 			defer wg.Done()
 			lineByLineReaderAsync.Read(_newLineMail)
-			// fmt.Println("Saliendo: ", line)
+
 			<-semaphore
 
 		}()
@@ -460,7 +445,6 @@ func (parser ParserAsyncSplit) Parse(file *os.File) model.Mail {
 
 	mailMap[model.K_CONTENT] = content[:endIndex]
 	mail = model.MailFromMap(mailMap)
-	// fmt.Println(mail.ToJsonIndent())
 
 	return mail
 }
@@ -493,8 +477,6 @@ func (parser ParserAsyncRegex) Parse(file *os.File) model.Mail {
 	noMatchMap := map[int]string{}
 	i := -1
 
-	// lineByLineReaderAsync := newLineByLineReaderAsync()
-
 	if parser.maxConcurrent > 50 {
 		parser.maxConcurrent = 50
 	} else if parser.maxConcurrent <= 0 {
@@ -507,16 +489,22 @@ func (parser ParserAsyncRegex) Parse(file *os.File) model.Mail {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	re, _ := regexp.Compile(`X-FileName:.+\n{1,}`)
-	reLine, _ := regexp.Compile(`^([\w-_]+:)(.+)\n`)
-
 	content := string(bytes)
-	index := re.FindStringIndex(content)
-	endIndex := index[1]
 
-	header := strings.TrimSpace(content[:endIndex])
-	body := strings.TrimSpace(content[endIndex:])
+	// re, _ := regexp.Compile(`X-FileName:.+\n{1,}`)
+
+	// index := re.FindStringIndex(content)
+	// endIndex := index[1]
+	// header := strings.TrimSpace(content[:endIndex])
+	// body := strings.TrimSpace(content[endIndex:])
+
+	re, _ := regexp.Compile(`(\r\n){2,}|\n{2,}`)
+	reLine, _ := regexp.Compile(`^([\w-_]+:)(.+)`)
+
+	match := re.Split(content, 2)
+
+	header := match[0]
+	body := match[1]
 
 	dataReader := strings.NewReader(header)
 	reader := bufio.NewReader(dataReader)
@@ -524,17 +512,19 @@ func (parser ParserAsyncRegex) Parse(file *os.File) model.Mail {
 	for {
 		lineByte, err := reader.ReadBytes('\n')
 		line := string(lineByte)
+		i++
+		indexLine := i
 
-		if err != nil {
+		if err != nil && len(line) <= 0 {
 
 			if err != io.EOF {
 				log.Println("Error al parserar el archivo: ", file.Name())
 			}
+
 			break
 		}
 
-		i++
-		indexLine := i
+		fmt.Println("Linea:", line)
 
 		wg.Add(1)
 		semaphore <- struct{}{}
