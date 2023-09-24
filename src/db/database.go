@@ -3,14 +3,13 @@ package myDatabase
 import (
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"strings"
 
-	"github.com/FranMT-S/Challenge-Go/src/constants"
+	constants_log "github.com/FranMT-S/Challenge-Go/src/constants/logs"
+	_logs "github.com/FranMT-S/Challenge-Go/src/logs"
 	myMiddleware "github.com/FranMT-S/Challenge-Go/src/middleware"
-	"github.com/FranMT-S/Challenge-Go/src/model"
 )
 
 var z_database *zincDatabase
@@ -27,36 +26,9 @@ func ZincDatabase() *zincDatabase {
 	return z_database
 }
 
-func (db zincDatabase) GetIndexData() (io.ReadCloser, *model.ResponseError) {
-	url := os.Getenv("URL") + "index/mailsTest3"
-
-	dbReq, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		fmt.Println("Error al crear la solicitud:", err)
-		return nil, model.NewResponseError(http.StatusBadRequest, constants.STATUS_ERROR, constants.ERROR_CREATE_REQUEST)
-	}
-
-	myMiddleware.ZincHeader(dbReq)
-
-	// Realizar la solicitud
-	dbResp, err := db.client.Do(dbReq)
-	if err != nil {
-		fmt.Println("Error al realizar la solicitud:", err)
-		return nil, model.NewResponseError(http.StatusBadRequest, constants.STATUS_ERROR, constants.ERROR_REQUEST)
-	}
-
-	// Verificar el código de estado de la respuesta
-	if dbResp.StatusCode != http.StatusOK {
-		fmt.Println("Respuesta no exitosa. Código de estado:", dbResp.Status)
-		return nil, model.NewResponseError(dbResp.StatusCode, constants.STATUS_ERROR, constants.ERROR_REQUEST)
-	}
-
-	return dbResp.Body, nil
-}
-
 func (db zincDatabase) CreateIndex() {
-	index := `{
-		"name": "Test",
+	index := fmt.Sprintf(`{
+		"name": "%v",
 		"storage_type": "disk",
 		"mappings": {
 		"properties": {
@@ -67,7 +39,7 @@ func (db zincDatabase) CreateIndex() {
 			"store": false,
 			"sortable": true,
 			"aggregatable": true,
-			"highlightable": false
+			"highlightable": true
 		  },
 		  "Bcc": {
 			"type": "text",
@@ -75,7 +47,7 @@ func (db zincDatabase) CreateIndex() {
 			"store": false,
 			"sortable": true,
 			"aggregatable": true,
-			"highlightable": false
+			"highlightable": true
 		  },
 		  "Cc": {
 			"type": "text",
@@ -83,7 +55,7 @@ func (db zincDatabase) CreateIndex() {
 			"store": false,
 			"sortable": true,
 			"aggregatable": true,
-			"highlightable": false
+			"highlightable": true
 		  },
 		  "Content": {
 			"type": "text",
@@ -91,7 +63,7 @@ func (db zincDatabase) CreateIndex() {
 			"store": false,
 			"sortable": true,
 			"aggregatable": true,
-			"highlightable": false
+			"highlightable": true
 		  },
 		  "Content_Transfer_Encoding": {
 			"type": "text",
@@ -99,7 +71,7 @@ func (db zincDatabase) CreateIndex() {
 			"store": false,
 			"sortable": true,
 			"aggregatable": true,
-			"highlightable": false
+			"highlightable": true
 		  },
 		  "Content_Type": {
 			"type": "text",
@@ -107,7 +79,7 @@ func (db zincDatabase) CreateIndex() {
 			"store": false,
 			"sortable": true,
 			"aggregatable": true,
-			"highlightable": false
+			"highlightable": true
 		  },
 		  "From": {
 			"type": "text",
@@ -115,7 +87,7 @@ func (db zincDatabase) CreateIndex() {
 			"store": false,
 			"sortable": true,
 			"aggregatable": true,
-			"highlightable": false
+			"highlightable": true
 		  },
 		  "Message_ID": {
 			"type": "text",
@@ -123,7 +95,7 @@ func (db zincDatabase) CreateIndex() {
 			"store": false,
 			"sortable": true,
 			"aggregatable": true,
-			"highlightable": false
+			"highlightable": true
 		  },
 		  "Mime_Version": {
 			"type": "text",
@@ -131,7 +103,7 @@ func (db zincDatabase) CreateIndex() {
 			"store": false,
 			"sortable": true,
 			"aggregatable": true,
-			"highlightable": false
+			"highlightable": true
 		  },
 		  "Subject": {
 			"type": "text",
@@ -139,7 +111,7 @@ func (db zincDatabase) CreateIndex() {
 			"store": false,
 			"sortable": true,
 			"aggregatable": true,
-			"highlightable": false
+			"highlightable": true
 		  },
 		  "To": {
 			"type": "text",
@@ -147,7 +119,7 @@ func (db zincDatabase) CreateIndex() {
 			"store": false,
 			"sortable": true,
 			"aggregatable": true,
-			"highlightable": false
+			"highlightable": true
 		  },
 		  "X_FileName": {
 			"type": "text",
@@ -155,7 +127,7 @@ func (db zincDatabase) CreateIndex() {
 			"store": false,
 			"sortable": true,
 			"aggregatable": true,
-			"highlightable": false
+			"highlightable": true
 		  },
 		  "X_Folder": {
 			"type": "text",
@@ -163,7 +135,7 @@ func (db zincDatabase) CreateIndex() {
 			"store": false,
 			"sortable": true,
 			"aggregatable": true,
-			"highlightable": false
+			"highlightable": true
 		  },
 		  "X_From": {
 			"type": "text",
@@ -171,7 +143,7 @@ func (db zincDatabase) CreateIndex() {
 			"store": false,
 			"sortable": true,
 			"aggregatable": true,
-			"highlightable": false
+			"highlightable": true
 		  },
 		  "X_Origin": {
 			"type": "text",
@@ -179,7 +151,7 @@ func (db zincDatabase) CreateIndex() {
 			"store": false,
 			"sortable": true,
 			"aggregatable": true,
-			"highlightable": false
+			"highlightable": true
 		  },
 		  "X_To": {
 			"type": "text",
@@ -187,7 +159,7 @@ func (db zincDatabase) CreateIndex() {
 			"store": false,
 			"sortable": true,
 			"aggregatable": true,
-			"highlightable": false
+			"highlightable": true
 		  },
 		  "X_bcc": {
 			"type": "text",
@@ -195,7 +167,7 @@ func (db zincDatabase) CreateIndex() {
 			"store": false,
 			"sortable": true,
 			"aggregatable": true,
-			"highlightable": false
+			"highlightable": true
 		  },
 		  "X_cc": {
 			"type": "text",
@@ -203,7 +175,7 @@ func (db zincDatabase) CreateIndex() {
 			"store": false,
 			"sortable": true,
 			"aggregatable": true,
-			"highlightable": false
+			"highlightable": true
 		  },
 		  "_id": {
 			"type": "keyword",
@@ -211,11 +183,11 @@ func (db zincDatabase) CreateIndex() {
 			"store": false,
 			"sortable": true,
 			"aggregatable": true,
-			"highlightable": false
+			"highlightable": true
 		  }
 		}
 		}
-	}`
+	}`, os.Getenv("INDEX"))
 
 	url := os.Getenv("URL") + "index"
 
@@ -223,8 +195,15 @@ func (db zincDatabase) CreateIndex() {
 
 	req, err := http.NewRequest("POST", url, data)
 	if err != nil {
-		fmt.Println(`entro en error 1`)
-		log.Fatal(err)
+		_logs.Println(constants_log.ERROR_CREATE_BASE + ":" + err.Error())
+		_logs.LogSVG(
+			constants_log.FILE_NAME_ERROR_DATABASE,
+			constants_log.OPERATION_DATABASE,
+			constants_log.ERROR_CREATE_BASE,
+			err,
+		)
+
+		return
 	}
 
 	myMiddleware.ZincHeader(req)
@@ -233,7 +212,15 @@ func (db zincDatabase) CreateIndex() {
 
 	if err != nil {
 
-		log.Fatal(err)
+		_logs.Println(constants_log.ERROR_DATA_BASE + ":" + err.Error())
+		_logs.LogSVG(
+			constants_log.FILE_NAME_ERROR_DATABASE,
+			constants_log.OPERATION_DATABASE,
+			constants_log.ERROR_DATA_BASE,
+			err,
+		)
+
+		return
 	}
 
 	defer resp.Body.Close()
@@ -241,16 +228,26 @@ func (db zincDatabase) CreateIndex() {
 	body, err := io.ReadAll(resp.Body)
 
 	if err != nil {
+		_logs.Println(constants_log.ERROR_DATA_BASE + ":" + err.Error())
+		_logs.LogSVG(
+			constants_log.FILE_NAME_ERROR_DATABASE,
+			constants_log.OPERATION_DATABASE,
+			constants_log.ERROR_DATA_BASE,
+			err,
+		)
 
-		log.Fatal(err)
+		return
 	}
 
-	if string(body) != `{"error":"index [Test] already exists"}` {
+	if string(body) != fmt.Sprintf(`{"error":"index [%v] already exists"}`, os.Getenv("INDEX")) {
+		_logs.ColorGreen()
+		fmt.Println("index created")
 		fmt.Println(string(body))
+		_logs.ColorWhite()
 	}
 }
 
-func BulkRequest(command, mailsData string) {
+func BulkRequest(command, mailsData string) error {
 
 	url := os.Getenv("URL") + command
 
@@ -258,7 +255,7 @@ func BulkRequest(command, mailsData string) {
 
 	req, err := http.NewRequest("POST", url, data)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	myMiddleware.ZincHeader(req)
@@ -266,17 +263,16 @@ func BulkRequest(command, mailsData string) {
 	resp, err := http.DefaultClient.Do(req)
 
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	defer resp.Body.Close()
 
-	log.Println(resp.StatusCode)
 	body, err := io.ReadAll(resp.Body)
-
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	fmt.Println(string(body))
+	return nil
 }

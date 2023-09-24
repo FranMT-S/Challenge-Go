@@ -19,5 +19,6 @@ const (
 	X_ORIGIN                  = "X-Origin:"
 	X_FILENAME                = "X-FileName:"
 
+	CONTENT  = "Content"
 	K_FATHER = "Father" // Utilizado en la interace lineMail
 )

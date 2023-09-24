@@ -124,3 +124,100 @@ func analizeHeader(mailMap map[string]string, line string, beforeField string) (
 
 	return beforeFieldUpdated
 }
+
+
+/*
+--------------------
+Parseador con Split
+--------------------
+
+Usa Expresiones Regulares para parsear el contenido
+*/
+
+type ParserAsyncSplit struct {
+	maxConcurrent int
+}
+
+func NewParserAsyncSpliter(_maxConcurrent int) *ParserAsyncSplit {
+	return &ParserAsyncSplit{maxConcurrent: _maxConcurrent}
+}
+
+func (parser ParserAsyncSplit) Parse(file *os.File) (*model.Mail, error) {
+
+	var mail *model.Mail
+	var mailMap map[string]string
+	var wg sync.WaitGroup
+	var semaphore chan struct{}
+	lineByLineReaderAsync := newLineByLineReaderAsync()
+
+	if parser.maxConcurrent > 50 {
+		parser.maxConcurrent = 50
+	} else if parser.maxConcurrent <= 0 {
+		parser.maxConcurrent = 1
+	}
+
+	semaphore = make(chan struct{}, parser.maxConcurrent)
+
+	bytes, err := io.ReadAll(file)
+	if err != nil {
+		return nil, err
+	}
+
+	re, _ := regexp.Compile(`X-FileName:.+\n{1,}`)
+
+	content := string(bytes)
+
+	index := re.FindStringIndex(content)
+	endIndex := index[1]
+
+	dataReader := strings.NewReader(content[:endIndex])
+	reader := bufio.NewReader(dataReader)
+
+	for {
+		lineByte, err := reader.ReadBytes('\n')
+		line := string(lineByte)
+
+		if err != nil && len(line) <= 0 {
+
+			if err != io.EOF {
+				return nil, err
+			}
+			break
+		}
+
+		var _newLineMail *lineMail
+
+		if lineByLineReaderAsync.line == nil {
+			lineByLineReaderAsync.line = newLineMail(nil, line, 0)
+			_newLineMail = lineByLineReaderAsync.line
+		} else {
+			_newLineMail = newLineMail(lineByLineReaderAsync.line, line, lineByLineReaderAsync.line.numberLine+1)
+			lineByLineReaderAsync.line = _newLineMail
+		}
+
+		wg.Add(1)
+		semaphore <- struct{}{}
+
+		go func() {
+			defer wg.Done()
+			lineByLineReaderAsync.Read(_newLineMail)
+
+			<-semaphore
+
+		}()
+	}
+
+	wg.Wait()
+	close(semaphore)
+
+	mailMap = lineByLineReaderAsync.getMapData()
+
+	mail, err = mailFroMap(mailMap)
+	if err != nil {
+		return nil, err
+	}
+
+	mailMap[model.K_CONTENT] = content[:endIndex]
+
+	return mail, nil
+}

@@ -1,74 +1,20 @@
 package Helpers
 
 import (
-	"fmt"
 	"io/fs"
+	"log"
 	"os"
 	"path/filepath"
+
+	constants_err "github.com/FranMT-S/Challenge-Go/src/constants/errors"
 )
 
-func ListAllFilesRecursive(path string) (files []string) {
-
-	dir, err := os.ReadDir(path)
-
+func ListAllFilesQuoteChannel(path string, ch chan string) (err error) {
+	_, err = os.ReadDir(path)
 	if err != nil {
-		fmt.Println("no se encontro el directorio: " + path)
-		return
-	}
-
-	for i := 0; i < len(dir); i++ {
-		newpath := path + "/" + dir[i].Name()
-
-		if dir[i].IsDir() {
-			subFiles := ListAllFilesRecursive(newpath)
-			files = append(files, subFiles...)
-		} else {
-			files = append(files, newpath)
-		}
-
-	}
-
-	return files
-}
-
-func ListAllFilesQuoteBasic(path string) (files []string) {
-	_, err := os.ReadDir(path)
-	if err != nil {
-		fmt.Println("no se encontro el directorio: " + path)
-		return
-	}
-
-	quoteBasic := NewQueueBasic()
-	quoteBasic.Push(path)
-
-	for {
-		currentPath := quoteBasic.Poll()
-		if currentPath == "" {
-			break
-		}
-
-		directorys, _ := os.ReadDir(currentPath)
-		for _, dir := range directorys {
-			newPath := currentPath + "/" + dir.Name()
-			if dir.IsDir() {
-				quoteBasic.Push(newPath)
-			} else {
-				files = append(files, newPath)
-			}
-		}
-
-	}
-
-	return files
-}
-
-//
-
-func ListAllFilesQuoteChannel(path string, ch chan string) {
-	_, err := os.ReadDir(path)
-	if err != nil {
-		fmt.Println("no se encontro el directorio: " + path)
-		return
+		log.Println(constants_err.ERROR_DIRECTORY_NOT_FOUND + ": " + path)
+		close(ch)
+		return err
 	}
 
 	quoteBasic := NewQueueBasic()
@@ -93,19 +39,72 @@ func ListAllFilesQuoteChannel(path string, ch chan string) {
 	}
 
 	close(ch)
-
+	return nil
 }
 
-//
+func ListAllFilesQuoteBasic(path string) (files []string, err error) {
+	_, err = os.ReadDir(path)
+	if err != nil {
+		log.Println(constants_err.ERROR_DIRECTORY_NOT_FOUND + ": " + path)
+		return nil, err
+	}
 
-func ListAllFilesIterative(path string) (files []string) {
+	quoteBasic := NewQueueBasic()
+	quoteBasic.Push(path)
+
+	for {
+		currentPath := quoteBasic.Poll()
+		if currentPath == "" {
+			break
+		}
+
+		directorys, _ := os.ReadDir(currentPath)
+		for _, dir := range directorys {
+			newPath := currentPath + "/" + dir.Name()
+			if dir.IsDir() {
+				quoteBasic.Push(newPath)
+			} else {
+				files = append(files, newPath)
+			}
+		}
+
+	}
+
+	return files, nil
+}
+
+func ListAllFilesRecursive(path string) (files []string, err error) {
+
+	dir, err := os.ReadDir(path)
+
+	if err != nil {
+		log.Println(constants_err.ERROR_DIRECTORY_NOT_FOUND + ": " + path)
+		return nil, err
+	}
+
+	for i := 0; i < len(dir); i++ {
+		newpath := path + "/" + dir[i].Name()
+
+		if dir[i].IsDir() {
+			subFiles, _ := ListAllFilesRecursive(newpath)
+			files = append(files, subFiles...)
+		} else {
+			files = append(files, newpath)
+		}
+
+	}
+
+	return files, nil
+}
+
+func ListAllFilesIterative(path string) (files []string, err error) {
 
 	folders := []string{path}
 
-	_, err := os.ReadDir(path)
+	_, err = os.ReadDir(path)
 	if err != nil {
-		fmt.Println("no se encontro el directorio: " + path)
-		return
+		log.Println(constants_err.ERROR_DIRECTORY_NOT_FOUND + ": " + path)
+		return nil, err
 	}
 	i := 0
 
@@ -129,10 +128,8 @@ func ListAllFilesIterative(path string) (files []string) {
 		}
 	}
 
-	return files
+	return files, nil
 }
-
-////////////
 
 type FolderWalker struct {
 	files []string
@@ -144,6 +141,7 @@ func (w FolderWalker) GetFiles() []string {
 
 func (w *FolderWalker) walk(path string, d fs.DirEntry, err error) error {
 	if err != nil {
+		log.Println(constants_err.ERROR_DIRECTORY_NOT_FOUND + ": " + path)
 		return err
 	}
 

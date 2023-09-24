@@ -6,25 +6,30 @@ import (
 	"os"
 	"sync"
 
+	constants_err "github.com/FranMT-S/Challenge-Go/src/constants/errors"
+	constants_log "github.com/FranMT-S/Challenge-Go/src/constants/logs"
 	"github.com/FranMT-S/Challenge-Go/src/core/bulker"
 	"github.com/FranMT-S/Challenge-Go/src/core/parser"
 	Helpers "github.com/FranMT-S/Challenge-Go/src/helpers"
+	_logs "github.com/FranMT-S/Challenge-Go/src/logs"
 	"github.com/FranMT-S/Challenge-Go/src/model"
 )
 
+const (
+	maxConcurrentAllowed = 20
+)
+
 /*
+Indexer - Indexa ua lista de archivos en la base de datos
+FilePaths rutas de archivos a indexar.
+Parse necesario para transformar los archivos de correo a JSON
+Bulker hace la peticion para subir el contenido a la base de datos
+Pagination ayudara a divir la cantidad de peticiones para reducir la carga.
 
-	Indexer - Indexa ua lista de archivos en la base de datos
-	FilePaths rutas de archivos a indexar.
-	Parse necesario para transformar los archivos de correo a JSON
-	Bulker hace la peticion para subir el contenido a la base de datos
-	Pagination ayudara a divir la cantidad de peticiones para reducir la carga.
-		Si no se asigna una pagination (pagination = 0), se establece por defecto 1000
+	Si no se asigna una pagination (pagination = 0), se establece por defecto 1000
 
-	El objetivo es pueda intercambiar algoritmos para hacer el bulk a la base de datos
-
+El objetivo es pueda intercambiar algoritmos para hacer el bulk a la base de datos
 */
-
 type Indexer struct {
 	Parser     parser.IParserMail
 	Bulker     bulker.IBulker
@@ -38,16 +43,17 @@ func (indexer Indexer) StartFromArray(FilePaths []string) {
 	}
 
 	if indexer.Parser == nil {
-		panic("Debe inicializar el campo Parse")
+		panic(constants_err.ERROR_PARSER_UNINITIALIZED)
 	}
 
 	if indexer.Bulker == nil {
-		panic("Debe inicializar el campo Bulker")
+		panic(constants_err.ERROR_BULKER_UNINITIALIZED)
 	}
 
 	if len(FilePaths) == 0 {
-		panic("El arreglo no tiene datos")
+		panic(constants_err.ERROR_ARRAY_EMPTY)
 	}
+
 	indexer.work(FilePaths)
 }
 
@@ -58,20 +64,25 @@ func (indexer Indexer) Start(path string) {
 	}
 
 	if indexer.Parser == nil {
-		panic("Debe inicializar el campo Parse")
+		panic(constants_err.ERROR_PARSER_UNINITIALIZED)
 	}
 
 	if indexer.Bulker == nil {
-		panic("Debe inicializar el campo Bulker")
+		panic(constants_err.ERROR_BULKER_UNINITIALIZED)
 	}
 
-	FilePaths := Helpers.ListAllFilesQuoteBasic(path)
-	indexer.work(FilePaths)
+	FilePaths, err := Helpers.ListAllFilesQuoteBasic(path)
+	if err != nil {
+		log.Println("Error:", err)
+
+	} else {
+		indexer.work(FilePaths)
+	}
 }
 
 func (indexer Indexer) work(FilePaths []string) {
 
-	part := make([]string, len(FilePaths))
+	paths := make([]string, len(FilePaths))
 	count := (len(FilePaths) / indexer.Pagination)
 
 	// Si hay residuos aumentamos en uno la cuenta para paginar
@@ -89,25 +100,42 @@ func (indexer Indexer) work(FilePaths []string) {
 		// start debe ser menor a la longitud del arreglo
 		// el residuo al dividir entre la paginacion no debe ser 0
 		if end > len(FilePaths) && len(FilePaths)%indexer.Pagination != 0 {
-			part = FilePaths[start:]
+			paths = FilePaths[start:]
 		} else if start < len(FilePaths) {
-			part = FilePaths[start:end]
+			paths = FilePaths[start:end]
 		}
 
-		if len(part) > 0 {
+		if len(paths) > 0 {
 
-			var mails []model.Mail
+			var mails []*model.Mail
 
-			for j := 0; j < len(part); j++ {
+			for j := 0; j < len(paths); j++ {
 
-				file, err := os.Open(part[j])
+				file, err := os.Open(paths[j])
 				if err != nil {
-					log.Fatal(err)
+					_logs.LogSVG(
+						constants_log.FILE_NAME_ERROR_INDEXER,
+						constants_log.OPERATION_PARSER,
+						constants_log.ERROR_OPEN_FILE+": "+paths[j],
+						err,
+					)
+					continue
 				}
 
-				fmt.Println("Parseando: " + part[j])
+				fmt.Print("\rParsing: " + paths[j])
+				parsedMail, err := indexer.Parser.Parse(file)
+				if err != nil {
+					_logs.LogSVG(
+						constants_log.FILE_NAME_ERROR_INDEXER,
+						constants_log.OPERATION_PARSER,
+						constants_log.ERROR_PARSER_FAILED+": "+paths[j],
+						err,
+					)
+					continue
+				} else {
+					mails = append(mails, parsedMail)
+				}
 
-				mails = append(mails, indexer.Parser.Parse(file))
 				file.Close()
 			}
 
@@ -115,7 +143,7 @@ func (indexer Indexer) work(FilePaths []string) {
 
 			mails = nil
 			fmt.Println("---------------------------")
-			fmt.Printf("---------Request %v Finalizada--------\n", i+1)
+			fmt.Printf("---------Request %v Completed--------\n", i+1)
 			fmt.Println("---------------------------")
 		}
 	}
@@ -125,8 +153,8 @@ func (indexer Indexer) StartAsync(path string, maxConcurrent int) {
 
 	if maxConcurrent < 0 {
 		maxConcurrent = 1
-	} else if maxConcurrent > 10 {
-		maxConcurrent = 10
+	} else if maxConcurrent > maxConcurrentAllowed {
+		maxConcurrent = maxConcurrentAllowed
 	}
 
 	pathCh := make(chan string)
@@ -135,51 +163,71 @@ func (indexer Indexer) StartAsync(path string, maxConcurrent int) {
 
 	for i := 0; i < maxConcurrent; i++ {
 		wg.Add(1)
-		go indexer.workAsync(pathCh, mutex, wg, i+1)
+		go indexer.workerAsync(pathCh, mutex, wg, i+1)
 	}
 
-	Helpers.ListAllFilesQuoteChannel(path, pathCh)
+	if err := Helpers.ListAllFilesQuoteChannel(path, pathCh); err != nil {
+		log.Println(err)
+	}
+
 	wg.Wait()
 }
 
-func (indexer Indexer) workAsync(pathCh chan string, mutex *sync.Mutex, wg *sync.WaitGroup, id int) {
+func (indexer Indexer) workerAsync(pathCh chan string, mutex *sync.Mutex, wg *sync.WaitGroup, id int) {
 	defer wg.Done()
 
 	NumRequest := 0
-	// part := make([]string, indexer.Pagination)
-	var mailList []model.Mail
+
+	var mails []*model.Mail
 	for path := range pathCh {
 		file, err := os.Open(path)
 		if err != nil {
-			log.Fatal(err)
+			_logs.LogSVG(
+				constants_log.FILE_NAME_ERROR_INDEXER,
+				constants_log.OPERATION_PARSER,
+				constants_log.ERROR_OPEN_FILE+": "+path,
+				err,
+			)
+			continue
 		}
-		fmt.Printf("\rWorker %v parseando: %v", id, path)
-		// fmt.Printf("Worker %v parseando: %v\n", id, path)
 
-		mailList = append(mailList, indexer.Parser.Parse(file))
+		fmt.Printf("\rWorker %v parsing: %v", id, path)
+
+		parsedMail, err := indexer.Parser.Parse(file)
+		if err != nil {
+			_logs.LogSVG(
+				constants_log.FILE_NAME_ERROR_INDEXER,
+				constants_log.OPERATION_PARSER,
+				constants_log.ERROR_PARSER_FAILED+": "+path,
+				err,
+			)
+			continue
+		} else {
+			mails = append(mails, parsedMail)
+		}
+
 		file.Close()
 
-		if len(mailList) == indexer.Pagination {
-			indexer.safeRequest(mailList, mutex, id, NumRequest)
-			mailList = nil
+		if len(mails) == indexer.Pagination {
+			indexer.safeRequest(mails, mutex, id, NumRequest)
+			mails = nil
 			NumRequest++
 		}
 	}
 
 	// Si quedaron pendientes
-	if len(mailList)%indexer.Pagination != 0 {
-		indexer.safeRequest(mailList, mutex, id, NumRequest)
-		mailList = nil
+	if len(mails)%indexer.Pagination != 0 {
+		indexer.safeRequest(mails, mutex, id, NumRequest)
+		mails = nil
 
 	}
 }
 
-func (indexer Indexer) safeRequest(mailList []model.Mail, mutex *sync.Mutex, id int, NumRequest int) {
+func (indexer Indexer) safeRequest(mails []*model.Mail, mutex *sync.Mutex, id int, NumRequest int) {
 	mutex.Lock()
-	indexer.Bulker.Bulk(mailList)
+	indexer.Bulker.Bulk(mails)
 	fmt.Println("---------------------------")
-	fmt.Printf("--Worker %v, Request %v Finalizada--------\n", id, NumRequest)
+	fmt.Printf("--Worker %v, Request %v Completed--------\n", id, NumRequest)
 	fmt.Println("---------------------------")
-
 	mutex.Unlock()
 }

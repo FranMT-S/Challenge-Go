@@ -11,16 +11,23 @@ import (
 
 const pathParserTest string = "db/maildir"
 
-var listFilesParser []string = Helpers.ListAllFilesQuoteBasic(pathParserTest)[0:20000]
+var listFilesParser []string
+
+func listFiles() {
+	if listFilesParser == nil {
+		listFilesParser, _ = Helpers.ListAllFilesQuoteBasic(pathParserTest)
+		listFilesParser = listFilesParser[:20000]
+	}
+}
 
 func BenchmarkIndexerParserNormal(b *testing.B) {
-	// pathTest := "src/db/maildir"
+	listFiles()
 
 	for i := 0; i < b.N; i++ {
 
 		indexer := core.Indexer{
 
-			Parser:     parser.ParserNormal{},
+			Parser:     parser.NewParserBasic(),
 			Bulker:     bulker.CreateBulkerV1(),
 			Pagination: 5000,
 		}
@@ -29,7 +36,7 @@ func BenchmarkIndexerParserNormal(b *testing.B) {
 	}
 }
 func BenchmarkIndexerParserAsync(b *testing.B) {
-
+	listFiles()
 	for i := 0; i < b.N; i++ {
 		indexer := core.Indexer{
 			Parser:     parser.NewParserAsync(50),
@@ -41,21 +48,8 @@ func BenchmarkIndexerParserAsync(b *testing.B) {
 	}
 }
 
-func BenchmarkIndexerParserAsyncSpliter(b *testing.B) {
-
-	for i := 0; i < b.N; i++ {
-		indexer := core.Indexer{
-			Parser:     parser.NewParserAsyncSpliter(50),
-			Bulker:     bulker.CreateBulkerV1(),
-			Pagination: 5000,
-		}
-
-		indexer.StartFromArray(listFilesParser)
-	}
-}
-
 func BenchmarkIndexerParserAsyncRegex(b *testing.B) {
-
+	listFiles()
 	for i := 0; i < b.N; i++ {
 		indexer := core.Indexer{
 			Parser:     parser.NewParserAsyncRegex(50),
