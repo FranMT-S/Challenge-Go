@@ -12,46 +12,165 @@ import (
 )
 
 const (
-	MAX_CONCURRENT_LINES = 25
+	MAX_CONCURRENT_LINES = 15
 )
 
-/*
-IParser Mail
-Proporciona el metodo para transformar un archivo a un formato de Correo.
-*/
+// Provides a method to transform files to emails.
+//   - Parse: transform a file in mail
 type IParserMail interface {
 	Parse(file *os.File) (*model.Mail, error)
 }
 
 /*
---------------------
-Parseador con Normal
---------------------
+Parser that implement IParserMail, internally it uses regular expressions to optimize performance, .
 
-Lee linea por linea y asigna el contenido al correo
+  - Maxconcurrent: defines the number of lines of the file that will be read at the same
+    time from it with a maximum of 15 and a minimum of 1
 */
+type parserAsyncRegex struct {
+	maxConcurrent int
+}
 
+/*
+Return a parserAsyncRegex that implement IParserMail.
+
+Internally it uses regular expressions to optimize performance.
+
+  - Maxconcurrent: defines the number of lines of the file that will be read
+    at the same time from it with a maximum of 15 and a minimum of 1
+*/
+func NewParserAsyncRegex(_maxConcurrent int) *parserAsyncRegex {
+	return &parserAsyncRegex{maxConcurrent: _maxConcurrent}
+}
+
+// Splits the file into header and body content to streamline the process.
+// return a mail if successful.
+//
+//	if failure return  mail=nil and  error
+func (parser parserAsyncRegex) Parse(file *os.File) (*model.Mail, error) {
+
+	var mail *model.Mail
+	var wg sync.WaitGroup
+	var semaphore chan struct{}
+	var mutex = &sync.Mutex{}
+
+	mailMap := make(map[string]string)
+	indexMap := make(map[int]string)   // index line
+	noMatchMap := make(map[int]string) // for lines that matches fields that contain more than one line
+	i := -1                            // counter for index line
+
+	if parser.maxConcurrent > MAX_CONCURRENT_LINES {
+		parser.maxConcurrent = MAX_CONCURRENT_LINES
+	} else if parser.maxConcurrent <= 0 {
+		parser.maxConcurrent = 1
+	}
+
+	semaphore = make(chan struct{}, parser.maxConcurrent)
+
+	bytes, err := io.ReadAll(file)
+	if err != nil {
+		return nil, err
+	}
+	content := string(bytes)
+
+	re, _ := regexp.Compile(`(\r\n){2,}|\n{2,}`)   // used to split the file
+	reLine, _ := regexp.Compile(`^([\w-_]+:)(.+)`) // used to find the fields
+
+	match := re.Split(content, 2)
+	header := match[0]
+	body := match[1]
+	mailMap[CONTENT] = body
+
+	dataReader := strings.NewReader(header)
+	reader := bufio.NewReader(dataReader)
+
+	for {
+		lineByte, err := reader.ReadBytes('\n')
+		line := string(lineByte)
+		i++
+		indexLine := i
+		if err != nil && len(line) <= 0 {
+			if err != io.EOF {
+
+				return nil, err
+
+			}
+			break
+		}
+
+		wg.Add(1)
+		semaphore <- struct{}{}
+		// fmt.Println("reading: ", line)
+		go func() {
+			defer wg.Done()
+			match := reLine.FindStringSubmatch(line)
+			if len(match) > 0 {
+				// match[1] = field
+				// match[2] = content line
+				mutex.Lock()
+				mailMap[match[1]] = match[2]
+				indexMap[indexLine] = match[1]
+				mutex.Unlock()
+			} else {
+				// if not match mean that line containt mutilines
+				mutex.Lock()
+				indexMap[indexLine] = ""
+				noMatchMap[indexLine] = line
+				mutex.Unlock()
+			}
+
+			<-semaphore
+
+		}()
+	}
+
+	wg.Wait()
+	close(semaphore)
+
+	// correct the lines that did not match since they are multiline
+	for j := 0; j <= i; j++ {
+
+		if indexMap[j] == "" {
+			indexMap[j] = indexMap[j-1]
+			mailMap[indexMap[j]] += noMatchMap[j]
+		}
+	}
+
+	mail, err = mailFroMap(mailMap)
+	if err != nil {
+		return nil, err
+	}
+
+	return mail, nil
+}
+
+// Parser that implement IParserMail, read the entire file line by line to create the email
 type parserBasic struct{}
 
+// Create a parserBasic that Implement IParserMail
+//
+// read the entire file line by line to create the email
 func NewParserBasic() *parserBasic {
 	return &parserBasic{}
 }
 
+// Read line by line and return a mail if successful.
+//
+//	if failure return  mail=nil and  error
 func (parser parserBasic) Parse(file *os.File) (*model.Mail, error) {
-	// buf := make([]byte, 1024)
+
 	var mail *model.Mail
 	var mailMap map[string]string
 	lineByLineReader := newLineByLineReader()
+
 	reader := bufio.NewReader(file)
-	// beforeLine := ""
+
 	for {
 		lineByte, err := reader.ReadBytes('\n')
 		line := string(lineByte)
 		if err != nil && len(line) <= 0 {
-
 			if err != io.EOF {
 				return nil, err
-
 			}
 			break
 		}
@@ -69,22 +188,27 @@ func (parser parserBasic) Parse(file *os.File) (*model.Mail, error) {
 	return mail, nil
 }
 
-// Maxima cantidad de hilos es 25
+/*
+Parser that implement IParserMail , read the entire file and analyze it by reading several lines at the same time.
+
+  - Maxconcurrent: defines the number of lines of the file that will be read at the
+    same time from it with a maximum of 15 and a minimum of 1
+*/
 type parserAsync struct {
 	maxConcurrent int
 }
 
 /*
-Parseador Asincrono acepta un valor que especifica el limite de lineas que leera al mismo tiempo
+return a parserAsync  that implement IParserMail, read the entire file and analyze it by reading several lines at the same time.
 
-Maximo 50 hilos. Minimo 1.
-
--1 Para usarlo sin limite de hilos pero deberia evitarse.
+  - Maxconcurrent: defines the number of lines of the file that will be read at the
+    sametime from it with a maximum of 15 and a minimum of 1
 */
 func NewParserAsync(_maxConcurrent int) *parserAsync {
 	return &parserAsync{maxConcurrent: _maxConcurrent}
 }
 
+// read the entire file and analyze it by reading several lines at the same time
 func (parser parserAsync) Parse(file *os.File) (*model.Mail, error) {
 	// buf := make([]byte, 1024)
 	var mail *model.Mail
@@ -113,7 +237,7 @@ func (parser parserAsync) Parse(file *os.File) (*model.Mail, error) {
 			lineByLineReaderAsync.line = newLineMail(nil, line, 0)
 			_newLineMail = lineByLineReaderAsync.line
 		} else {
-			_newLineMail = newLineMail(lineByLineReaderAsync.line, line, lineByLineReaderAsync.line.numberLine+1)
+			_newLineMail = newLineMail(lineByLineReaderAsync.line, line, lineByLineReaderAsync.line.lineNumber+1)
 			lineByLineReaderAsync.line = _newLineMail
 		}
 
@@ -140,120 +264,6 @@ func (parser parserAsync) Parse(file *os.File) (*model.Mail, error) {
 
 	mailMap = lineByLineReaderAsync.getMapData()
 	mail, err := mailFroMap(mailMap)
-	if err != nil {
-		return nil, err
-	}
-
-	return mail, nil
-}
-
-/*
---------------------
-Parseador con Split
---------------------
-
-Usa Expresiones Regulares para parsear el contenido
-*/
-
-type ParserAsyncRegex struct {
-	maxConcurrent int
-}
-
-func NewParserAsyncRegex(_maxConcurrent int) *ParserAsyncRegex {
-	return &ParserAsyncRegex{maxConcurrent: _maxConcurrent}
-}
-
-func (parser ParserAsyncRegex) Parse(file *os.File) (*model.Mail, error) {
-
-	var mail *model.Mail
-	var wg sync.WaitGroup
-	var semaphore chan struct{}
-	var mutex = &sync.Mutex{}
-
-	mailMap := make(map[string]string)
-	indexMap := make(map[int]string)
-	noMatchMap := make(map[int]string)
-	i := -1 // counter for line index
-
-	if parser.maxConcurrent > MAX_CONCURRENT_LINES {
-		parser.maxConcurrent = MAX_CONCURRENT_LINES
-	} else if parser.maxConcurrent <= 0 {
-		parser.maxConcurrent = 1
-	}
-
-	semaphore = make(chan struct{}, parser.maxConcurrent)
-
-	bytes, err := io.ReadAll(file)
-	if err != nil {
-		return nil, err
-	}
-	content := string(bytes)
-
-	re, _ := regexp.Compile(`(\r\n){2,}|\n{2,}`)
-	reLine, _ := regexp.Compile(`^([\w-_]+:)(.+)`)
-
-	match := re.Split(content, 2)
-
-	header := match[0]
-	body := match[1]
-
-	mailMap[CONTENT] = body
-
-	dataReader := strings.NewReader(header)
-	reader := bufio.NewReader(dataReader)
-
-	for {
-		lineByte, err := reader.ReadBytes('\n')
-		line := string(lineByte)
-		i++
-		indexLine := i
-		if err != nil && len(line) <= 0 {
-			if err != io.EOF {
-
-				return nil, err
-
-			}
-			break
-		}
-
-		wg.Add(1)
-		semaphore <- struct{}{}
-		// fmt.Println("Entrando: ", line)
-		go func() {
-			defer wg.Done()
-			match := reLine.FindStringSubmatch(line)
-			if len(match) > 0 {
-				// match[1] el campo, match[2] el contenido del campo
-				mutex.Lock()
-				mailMap[match[1]] = match[2]
-				indexMap[indexLine] = match[1]
-				mutex.Unlock()
-			} else {
-				// El campo sera el de la linea anterior
-				mutex.Lock()
-				indexMap[indexLine] = ""
-				noMatchMap[indexLine] = line
-				mutex.Unlock()
-			}
-
-			<-semaphore
-
-		}()
-	}
-
-	wg.Wait()
-	close(semaphore)
-
-	// Corregis los campos que no hicieron match
-	for j := 0; j <= i; j++ {
-
-		if indexMap[j] == "" {
-			indexMap[j] = indexMap[j-1]
-			mailMap[indexMap[j]] += noMatchMap[j]
-		}
-	}
-
-	mail, err = mailFroMap(mailMap)
 	if err != nil {
 		return nil, err
 	}

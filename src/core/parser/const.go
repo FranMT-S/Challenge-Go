@@ -1,5 +1,6 @@
 package parser
 
+// Used to analize header of file.
 const (
 	MESSAGE_ID                = "Message-ID:"
 	DATE                      = "Date:"
@@ -20,5 +21,5 @@ const (
 	X_FILENAME                = "X-FileName:"
 
 	CONTENT  = "Content"
-	K_FATHER = "Father" // Utilizado en la interace lineMail
+	K_FATHER = "Father" // used int the struct lineMail
 )

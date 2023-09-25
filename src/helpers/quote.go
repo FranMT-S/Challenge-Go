@@ -11,7 +11,7 @@ type queuenode struct {
 	next *queuenode
 }
 
-// A go-routine safe FIFO (first in first out) data stucture.
+// A go-routine safe FIFO (first in first out) data stucture safe to concurrent.
 type QueueSafe struct {
 	head  *queuenode
 	tail  *queuenode
@@ -19,7 +19,7 @@ type QueueSafe struct {
 	lock  *sync.Mutex
 }
 
-// Creates a new pointer to a new queue.
+// returns a new pointer to a new queue safe to concurrent.
 func NewQueueSafe() *QueueSafe {
 	q := &QueueSafe{}
 	q.lock = &sync.Mutex{}
@@ -35,7 +35,6 @@ func (q *QueueSafe) Len() int {
 }
 
 // Pushes/inserts a value at the end/tail of the queue.
-// Note: this function does mutate the queue.
 // go-routine safe.
 func (q *QueueSafe) Push(item string) {
 	q.lock.Lock()
@@ -55,7 +54,6 @@ func (q *QueueSafe) Push(item string) {
 
 // Returns the value at the front of the queue.
 // i.e. the oldest value in the queue.
-// Note: this function does mutate the queue.
 // go-routine safe.
 func (q *QueueSafe) Poll() string {
 	q.lock.Lock()
@@ -78,7 +76,6 @@ func (q *QueueSafe) Poll() string {
 
 // Returns a read value at the front of the queue.
 // i.e. the oldest value in the queue.
-// Note: this function does NOT mutate the queue.
 // go-routine safe.
 func (q *QueueSafe) Peek() string {
 	q.lock.Lock()
@@ -92,26 +89,26 @@ func (q *QueueSafe) Peek() string {
 	return n.data
 }
 
-/*
- End Quote Safe
-*/
-
-type QuoteBasic struct {
+// structure basic of queue
+type QueueBasic struct {
 	head  *queuenode
 	tail  *queuenode
 	count int
 }
 
-func NewQueueBasic() *QuoteBasic {
-	q := &QuoteBasic{}
+// return a structure basic of queue
+func NewQueueBasic() *QueueBasic {
+	q := &QueueBasic{}
 	return q
 }
 
-func (q *QuoteBasic) Len() int {
+// return length of the queue
+func (q *QueueBasic) Len() int {
 	return q.count
 }
 
-func (q *QuoteBasic) Push(item string) {
+// insert a element in the queue
+func (q *QueueBasic) Push(item string) {
 	n := &queuenode{data: item}
 
 	if q.tail == nil {
@@ -124,7 +121,8 @@ func (q *QuoteBasic) Push(item string) {
 	q.count++
 }
 
-func (q *QuoteBasic) Poll() string {
+// returns and extracts the last element from the head of the queue
+func (q *QueueBasic) Poll() string {
 	if q.head == nil {
 		return ""
 	}
@@ -140,7 +138,8 @@ func (q *QuoteBasic) Poll() string {
 	return n.data
 }
 
-func (q *QuoteBasic) Peek() string {
+// returns witout extracts the last element from the head of the queue
+func (q *QueueBasic) Peek() string {
 	n := q.head
 	if n == nil {
 		return ""

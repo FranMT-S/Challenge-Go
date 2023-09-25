@@ -9,6 +9,11 @@ import (
 	constants_err "github.com/FranMT-S/Challenge-Go/src/constants/errors"
 )
 
+// returns the paths of the files to be indexed in the channel specified in the "ch" parameter.
+//
+// It is recommended to use a buffer channel to read the paths.
+//
+//	If an error occurs, it returns files=nil and error
 func ListAllFilesQuoteChannel(path string, ch chan string) (err error) {
 	_, err = os.ReadDir(path)
 	if err != nil {
@@ -42,6 +47,9 @@ func ListAllFilesQuoteChannel(path string, ch chan string) (err error) {
 	return nil
 }
 
+// return a list with the path of the files to be indexed
+//
+// If an error occurs, it returns files=nil and error
 func ListAllFilesQuoteBasic(path string) (files []string, err error) {
 	_, err = os.ReadDir(path)
 	if err != nil {
@@ -73,6 +81,9 @@ func ListAllFilesQuoteBasic(path string) (files []string, err error) {
 	return files, nil
 }
 
+// return a list with the path of the files to be indexed
+//
+// If an error occurs, it returns files=nil and error
 func ListAllFilesRecursive(path string) (files []string, err error) {
 
 	dir, err := os.ReadDir(path)
@@ -97,6 +108,9 @@ func ListAllFilesRecursive(path string) (files []string, err error) {
 	return files, nil
 }
 
+// return a list with the path of the files to be indexed
+//
+// If an error occurs, it returns files=nil and error
 func ListAllFilesIterative(path string) (files []string, err error) {
 
 	folders := []string{path}

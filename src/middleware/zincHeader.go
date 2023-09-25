@@ -5,6 +5,9 @@ import (
 	"os"
 )
 
+// Set basic header settings as [Zincsearch] recommended
+//
+// [Zincsearch]: https://zincsearch-docs.zinc.dev/ingestion/single-record/#curl
 func ZincHeader(req *http.Request) {
 
 	req.SetBasicAuth(os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"))

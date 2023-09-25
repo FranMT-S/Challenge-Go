@@ -18,6 +18,7 @@ type zincDatabase struct {
 	client *http.Client
 }
 
+// returns a single instance of the database
 func ZincDatabase() *zincDatabase {
 	if z_database == nil {
 		z_database = &zincDatabase{client: &http.Client{}}
@@ -26,6 +27,7 @@ func ZincDatabase() *zincDatabase {
 	return z_database
 }
 
+// Try to create the database index in case it does not exist.
 func (db zincDatabase) CreateIndex() {
 	index := fmt.Sprintf(`{
 		"name": "%v",
@@ -247,6 +249,7 @@ func (db zincDatabase) CreateIndex() {
 	}
 }
 
+// makes a request to the database to store the files.
 func BulkRequest(command, mailsData string) error {
 
 	url := os.Getenv("URL") + command
@@ -273,6 +276,6 @@ func BulkRequest(command, mailsData string) error {
 		return err
 	}
 
-	fmt.Println(string(body))
+	fmt.Println("\n" + string(body))
 	return nil
 }

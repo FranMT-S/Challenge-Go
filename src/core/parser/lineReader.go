@@ -2,56 +2,35 @@ package parser
 
 import (
 	"strings"
-	"sync"
 )
 
-type lineMail struct {
-	lineFather    *lineMail
-	field         string
-	data          string
-	lineToAnalize string
-	numberLine    int
-	lock          *sync.Mutex
-}
-
-func (lineMail *lineMail) getField() string {
-	lineMail.lock.Lock()
-	defer lineMail.lock.Unlock()
-
-	if lineMail.field == K_FATHER {
-		lineMail.field = lineMail.lineFather.getField()
-	}
-
-	return lineMail.field
-}
-
-func newLineMail(_fatherLine *lineMail, _lineToAnalize string, _numberLine int) *lineMail {
-	return &lineMail{lineFather: _fatherLine, lineToAnalize: _lineToAnalize, numberLine: _numberLine, lock: &sync.Mutex{}}
-}
-
-func newLineByLineReaderAsync() *lineByLineReaderAsync {
-	return &lineByLineReaderAsync{lock: &sync.Mutex{}, headLineFlag: -1}
-}
-
-// Line Reader String, lee una linea en string para formatearla
+// provides methods to read and analyze a line
+//   - Read: is in charge of analyzing the line
+//   - getMapData: is responsible for returning a map that contains the email data
 type ILineReader[T string | *lineMail] interface {
 	Read(line T)
 	getMapData() map[string]string
 }
 
+// read and analyze line by line and create a map with mail data
+//   - beforeLecture: it is used for fields with multilines
 type lineByLineReader struct {
 	mailMap       map[string]string
 	beforeLecture string
 }
 
+// return a lineByLineReader that implement ILineReader
 func newLineByLineReader() *lineByLineReader {
 	return &lineByLineReader{mailMap: make(map[string]string)}
 }
 
+// return a map that contains the email data
 func (lineReader lineByLineReader) getMapData() map[string]string {
 	return lineReader.mailMap
 }
 
+// read line by line  searching the email fields
+// X-Filename is the field that marks the final of header
 func (lineReader *lineByLineReader) Read(line string) {
 	if lineReader.mailMap[X_FILENAME] != "" {
 		lineReader.mailMap[CONTENT] += line
@@ -111,15 +90,26 @@ func (lineReader *lineByLineReader) Read(line string) {
 	}
 }
 
+// Reader that uses a lineMail object to ensure the use of goroutines
+//   - line: a object lineMail
+//   - headLineFlag: mark the final of header when X-FileName is encountered
 type lineByLineReaderAsync struct {
 	line         *lineMail
-	lock         *sync.Mutex
-	headLineFlag int
+	headLineFlag int // mark the final of header when X-FileName is encountered
 }
 
-func (lineReader *lineByLineReaderAsync) Read(line *lineMail) {
+// return a lineByLineReaderAsync that implement ILineReader.
+//
+// Reader that uses a lineMail object to ensure the use of goroutines.
+func newLineByLineReaderAsync() *lineByLineReaderAsync {
+	return &lineByLineReaderAsync{headLineFlag: -1}
+}
 
-	if lineReader.headLineFlag > 0 && lineReader.headLineFlag < line.numberLine {
+// Receives a lineMail object and analize the line of file.
+//
+// this function mutates the lineMail.
+func (lineReader *lineByLineReaderAsync) Read(line *lineMail) {
+	if lineReader.headLineFlag > 0 && lineReader.headLineFlag < line.lineNumber {
 		line.data = line.lineToAnalize
 		line.field = CONTENT
 	} else if strings.HasPrefix(line.lineToAnalize, X_FROM) {
@@ -143,7 +133,7 @@ func (lineReader *lineByLineReaderAsync) Read(line *lineMail) {
 	} else if strings.HasPrefix(line.lineToAnalize, X_FILENAME) {
 		line.data = line.lineToAnalize[len(X_FILENAME):]
 		line.field = X_FILENAME
-		lineReader.headLineFlag = line.numberLine
+		lineReader.headLineFlag = line.lineNumber
 	} else if strings.HasPrefix(line.lineToAnalize, MESSAGE_ID) {
 		line.data = line.lineToAnalize[len(MESSAGE_ID):]
 		line.field = MESSAGE_ID
@@ -181,6 +171,7 @@ func (lineReader *lineByLineReaderAsync) Read(line *lineMail) {
 
 }
 
+// return a map that contains the email data
 func (lineReader *lineByLineReaderAsync) getMapData() map[string]string {
 	temp := lineReader.line
 	mailMap := make(map[string]string)
@@ -189,10 +180,11 @@ func (lineReader *lineByLineReaderAsync) getMapData() map[string]string {
 			break
 		}
 
-		if lineReader.headLineFlag < temp.numberLine {
+		if lineReader.headLineFlag < temp.lineNumber {
 			mailMap[CONTENT] = temp.lineToAnalize + mailMap[CONTENT]
 		} else {
-			mailMap[temp.getField()] = temp.data + mailMap[temp.getField()]
+			field := temp.getField()
+			mailMap[field] = temp.data + mailMap[field]
 		}
 
 		temp = temp.lineFather
