@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/FranMT-S/Challenge-Go/src/core"
+	_core "github.com/FranMT-S/Challenge-Go/src/core"
 	"github.com/FranMT-S/Challenge-Go/src/core/bulker"
 	"github.com/FranMT-S/Challenge-Go/src/core/parser"
 	Helpers "github.com/FranMT-S/Challenge-Go/src/helpers"
@@ -25,7 +25,7 @@ func BenchmarkIndexerParserNormal(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 
-		indexer := core.Indexer{
+		indexer := _core.Indexer{
 
 			Parser:     parser.NewParserBasic(),
 			Bulker:     bulker.CreateBulkerV1(),
@@ -38,7 +38,7 @@ func BenchmarkIndexerParserNormal(b *testing.B) {
 func BenchmarkIndexerParserAsync(b *testing.B) {
 	listFiles()
 	for i := 0; i < b.N; i++ {
-		indexer := core.Indexer{
+		indexer := _core.Indexer{
 			Parser:     parser.NewParserAsync(50),
 			Bulker:     bulker.CreateBulkerV1(),
 			Pagination: 5000,
@@ -51,7 +51,7 @@ func BenchmarkIndexerParserAsync(b *testing.B) {
 func BenchmarkIndexerParserAsyncRegex(b *testing.B) {
 	listFiles()
 	for i := 0; i < b.N; i++ {
-		indexer := core.Indexer{
+		indexer := _core.Indexer{
 			Parser:     parser.NewParserAsyncRegex(50),
 			Bulker:     bulker.CreateBulkerV2(),
 			Pagination: 5000,

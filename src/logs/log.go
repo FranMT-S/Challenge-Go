@@ -2,23 +2,14 @@ package _logs
 
 import (
 	"encoding/csv"
-	"errors"
 	"fmt"
 	"log"
 	"os"
 	"time"
 
 	constants_log "github.com/FranMT-S/Challenge-Go/src/constants/logs"
+	Helpers "github.com/FranMT-S/Challenge-Go/src/helpers"
 )
-
-func createDirectoryLogIfNotExist() {
-	if _, err := os.Stat("logs"); errors.Is(err, os.ErrNotExist) {
-		err := os.Mkdir("logs", os.ModePerm)
-		if err != nil {
-			log.Println(err)
-		}
-	}
-}
 
 /*
 adds a new log record to the file. If the file does not exist it will create it
@@ -33,7 +24,7 @@ adds a new log record to the file. If the file does not exist it will create it
 */
 func LogSVG(fileName, operation, description string, err error) {
 
-	createDirectoryLogIfNotExist()
+	Helpers.CreateDirectoryLogIfNotExist("logs")
 
 	path := fmt.Sprintf("logs/%v.csv", fileName)
 

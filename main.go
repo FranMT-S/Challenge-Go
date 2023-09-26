@@ -1,78 +1,141 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"log"
+	"os"
+	"runtime"
+	"runtime/pprof"
+	"strconv"
 	"time"
 
 	"github.com/FranMT-S/Challenge-Go/src/constants"
-	"github.com/FranMT-S/Challenge-Go/src/core"
+	_core "github.com/FranMT-S/Challenge-Go/src/core"
 	"github.com/FranMT-S/Challenge-Go/src/core/bulker"
 	"github.com/FranMT-S/Challenge-Go/src/core/parser"
 	myDatabase "github.com/FranMT-S/Challenge-Go/src/db"
+	Helpers "github.com/FranMT-S/Challenge-Go/src/helpers"
 )
-
-var path string = "db/maildir"
 
 func main() {
 
 	constants.InitializeVarEnviroment()
-	// Registra el tiempo de inicio
+	Helpers.CreateDirectoryLogIfNotExist("profiling")
+
+	// register time
 	startTime := time.Now()
 	myDatabase.ZincDatabase().CreateIndex()
 
-	// // path := "src/db/maildir/allen-p"
+	path := selectPathToIndex()
+	pagination := selectPagination()
+	filesConcurrency := selectNumFiles()
+	linesConcurrency := selectLinesReadingAtSameTime()
 
-	// listFiles := Helpers.ListAllFilesQuoteBasic(path)
-	// listFiles := Helpers.ListAllFilesQuoteBasic(path)[0:20000]
-
-	// // listFiles := []string{"db/maildir/arora-h/sent_items/26"}
-	// // listFiles := []string{"db/maildir/allen-p/straw/7"}
-	// listFiles := []string{"db/maildir/buy-r/inbox/15"}
-	// listFiles := []string{"db/maildir/buy-r/inbox/99"}
-	// listFiles := []string{"db/maildir/allen-p/_sent_mail/100"}
-
-	// // for _, v := range listFiles {
-	// // 	fmt.Println(v)
-	// // }
-
-	// var opt string
-	// Taking input from user
-	// fmt.Println("ingrese un comando: \nclient \nserver \nquite \ncommand: ")
-	// fmt.Scanln(&opt)
-	// switch strings.ToLower(opt) {
-	// case "client":
-	// 	fmt.Println("start client")
-	// 	mysocket.Client()
-	// case "server":
-	// 	fmt.Println("start server")
-	// 	mysocket.Server()
-	// case "quite":
-	// 	fmt.Println("saliendo")
-	// default:
-	// 	fmt.Println("ingrese un comando: client, server, quite")
-	// 	fmt.Scanln(&opt)
-	// }
-
-	// listFiles := []string{"db/maildir/lokey-t/calendar/33"}
-	indexer := core.Indexer{
+	indexer := _core.Indexer{
 		// Parser:     parser.NewParserBasic(),
 		// Parser: parser.NewParserAsync(20),
-		Parser:     parser.NewParserAsyncRegex(15),
+		Parser:     parser.NewParserAsyncRegex(linesConcurrency),
 		Bulker:     bulker.CreateBulkerV2(),
-		Pagination: 100,
+		Pagination: pagination,
 	}
 
-	// // indexer.StartFromArray(listFiles)
+	// cpu profiling
+	f, err := os.Create(fmt.Sprintf("cpu_%v.prof", time.Now().Format("020106_030405")))
+	if err != nil {
+		log.Fatal("could not create CPU profile: ", err)
+	}
 
-	// indexer.Start(`db/TestFormat`)
-	// indexer.Start(`db/TestFormat`)
-	// indexer.StartAsync(`db/maildir`, 30)
-	indexer.StartAsync(`db/Test`, 3)
-	// indexer.StartAsync(`db/Test`, 10)
+	defer f.Close() // error handling omitted for example
+	if err := pprof.StartCPUProfile(f); err != nil {
+		log.Fatal("could not start CPU profile: ", err)
+	}
+	defer pprof.StopCPUProfile()
+
+	indexer.StartAsync(path, filesConcurrency)
 
 	endTime := time.Now()
 	duration := endTime.Sub(startTime)
 	seconds := duration.Seconds()
 
-	fmt.Printf("El código se ejecutó en %.2f segundos\n", seconds)
+	fmt.Printf("The code ran in %.2f seconds\n", seconds)
+
+	// Mem profiling
+	f2, err := os.Create(fmt.Sprintf("mem_%v.prof", time.Now().Format("020106_030405")))
+	if err != nil {
+		log.Fatal("could not create memory profile: ", err)
+	}
+	defer f2.Close() // error handling omitted for example
+	runtime.GC()     // get up-to-date statistics
+	if err := pprof.WriteHeapProfile(f2); err != nil {
+		log.Fatal("could not write memory profile: ", err)
+	}
+}
+
+func selectPagination() int {
+	var opt string
+
+	for {
+		fmt.Printf("Select the pagination that establishes how many files will be uploaded to the database max %v: ", _core.GetMaxmaxPaginationAllowed())
+		fmt.Scanln(&opt)
+		num, err := strconv.Atoi(opt)
+
+		if err != nil || num < 1 || num > _core.GetMaxmaxPaginationAllowed() {
+			fmt.Println("invalid value entered")
+			continue
+		}
+		return num
+	}
+}
+
+func selectNumFiles() int {
+	var opt string
+
+	for {
+		fmt.Printf("enter the number of files that will be read at the same time, min:1 , max:%v: ", _core.GetMaxConcurrentAllow())
+		fmt.Scanln(&opt)
+		num, err := strconv.Atoi(opt)
+
+		if err != nil || num < 1 || num > _core.GetMaxConcurrentAllow() {
+			fmt.Println("invalid value entered")
+			continue
+		}
+		return num
+
+	}
+}
+
+func selectLinesReadingAtSameTime() int {
+	var opt string
+
+	for {
+		fmt.Printf("Select the number of lines that will be analyzed at the same time, min:1 , max:%v: ", parser.GetMaxConcurrentLines())
+		fmt.Scanln(&opt)
+		num, err := strconv.Atoi(opt)
+
+		if err != nil || num < 1 || num > parser.GetMaxConcurrentLines() {
+			fmt.Println("invalid value entered")
+			continue
+		}
+		return num
+
+	}
+
+}
+
+func selectPathToIndex() string {
+	var opt string
+
+	for {
+		fmt.Printf("write the path to index:")
+		fmt.Scanln(&opt)
+
+		if _, err := os.Stat(opt); errors.Is(err, os.ErrNotExist) {
+			fmt.Println("the path was not found, enter an existing path")
+			continue
+		}
+
+		return opt
+	}
+
 }

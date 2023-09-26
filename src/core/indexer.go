@@ -1,4 +1,4 @@
-package core
+package _core
 
 import (
 	"fmt"
@@ -16,9 +16,17 @@ import (
 )
 
 const (
-	maxConcurrentAllowed = 30
-	maxPagination        = 5000
+	_MAXCONCURRENTALLOWED = 30
+	_MAXPAGINATION        = 5000
 )
+
+func GetMaxConcurrentAllow() int {
+	return _MAXCONCURRENTALLOWED
+}
+
+func GetMaxmaxPaginationAllowed() int {
+	return _MAXPAGINATION
+}
 
 /*
 Indexer - Contains methods for files that are registered in the database
@@ -54,8 +62,8 @@ func (indexer Indexer) StartAsync(path string, maxConcurrent int) {
 
 	if maxConcurrent < 0 {
 		maxConcurrent = 1
-	} else if maxConcurrent > maxConcurrentAllowed {
-		maxConcurrent = maxConcurrentAllowed
+	} else if maxConcurrent > _MAXCONCURRENTALLOWED {
+		maxConcurrent = _MAXCONCURRENTALLOWED
 	}
 
 	pathCh := make(chan string)
@@ -146,8 +154,8 @@ func (indexer Indexer) StartFromArray(FilePaths []string) {
 		indexer.Pagination = 1000
 	}
 
-	if indexer.Pagination > maxPagination {
-		indexer.Pagination = maxPagination
+	if indexer.Pagination > _MAXPAGINATION {
+		indexer.Pagination = _MAXPAGINATION
 	}
 
 	if indexer.Parser == nil {
@@ -172,8 +180,8 @@ func (indexer Indexer) Start(path string) {
 		indexer.Pagination = 1000
 	}
 
-	if indexer.Pagination > maxPagination {
-		indexer.Pagination = maxPagination
+	if indexer.Pagination > _MAXPAGINATION {
+		indexer.Pagination = _MAXPAGINATION
 	}
 
 	if indexer.Parser == nil {

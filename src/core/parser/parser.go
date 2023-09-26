@@ -12,8 +12,12 @@ import (
 )
 
 const (
-	MAX_CONCURRENT_LINES = 15
+	_MAX_CONCURRENT_LINES = 15
 )
+
+func GetMaxConcurrentLines() int {
+	return _MAX_CONCURRENT_LINES
+}
 
 // Provides a method to transform files to emails.
 //   - Parse: transform a file in mail
@@ -59,8 +63,8 @@ func (parser parserAsyncRegex) Parse(file *os.File) (*model.Mail, error) {
 	noMatchMap := make(map[int]string) // for lines that matches fields that contain more than one line
 	i := -1                            // counter for index line
 
-	if parser.maxConcurrent > MAX_CONCURRENT_LINES {
-		parser.maxConcurrent = MAX_CONCURRENT_LINES
+	if parser.maxConcurrent > _MAX_CONCURRENT_LINES {
+		parser.maxConcurrent = _MAX_CONCURRENT_LINES
 	} else if parser.maxConcurrent <= 0 {
 		parser.maxConcurrent = 1
 	}
