@@ -45,11 +45,18 @@ func Client() {
 		for {
 			fmt.Print("send message:")
 			fmt.Scanln(&msg)
-			_, err = connection.Write([]byte(msg))
 			if err != nil {
 				fmt.Println("message cannot read")
+				return
 			}
 
+			if msgServer == "close" {
+				fmt.Println("Saliendo")
+				sw.Done()
+				return
+			}
+
+			_, err = connection.Write([]byte(msg))
 		}
 	}()
 

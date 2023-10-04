@@ -1,2 +1,4 @@
 /db
 /logs
+/profiling/*
+/profiling

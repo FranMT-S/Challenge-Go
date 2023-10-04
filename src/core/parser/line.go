@@ -22,7 +22,7 @@ type lineMail struct {
 }
 
 /*
-Gets the field in which the information should be assigned
+getField gets the field in which the information should be assigned
 */
 func (lineMail *lineMail) getField() string {
 	lineMail.lock.Lock()
@@ -35,6 +35,7 @@ func (lineMail *lineMail) getField() string {
 	return lineMail.field
 }
 
+// newLineMail return a pointer of lineMail object
 func newLineMail(_fatherLine *lineMail, _lineToAnalize string, _numberLine int) *lineMail {
 	return &lineMail{lineFather: _fatherLine, lineToAnalize: _lineToAnalize, lineNumber: _numberLine, lock: &sync.Mutex{}}
 }

@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-// Set basic header settings as [Zincsearch] recommended
+// ZincHeader Set basic header settings as [Zincsearch] recommended
 //
 // [Zincsearch]: https://zincsearch-docs.zinc.dev/ingestion/single-record/#curl
 func ZincHeader(req *http.Request) {

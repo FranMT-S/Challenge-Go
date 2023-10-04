@@ -19,22 +19,24 @@ type QueueSafe struct {
 	lock  *sync.Mutex
 }
 
-// returns a new pointer to a new queue safe to concurrent.
+// NewQueueSafe returns a new pointer to a NewQueueSafe object safe to concurrent.
 func NewQueueSafe() *QueueSafe {
 	q := &QueueSafe{}
 	q.lock = &sync.Mutex{}
+
 	return q
 }
 
-// Returns the number of elements in the queue (i.e. size/length)
+// Len returns the number of elements in the queue (i.e. size/length)
 // go-routine safe.
 func (q *QueueSafe) Len() int {
 	q.lock.Lock()
 	defer q.lock.Unlock()
+
 	return q.count
 }
 
-// Pushes/inserts a value at the end/tail of the queue.
+// Push Pushes/inserts a value at the end/tail of the queue.
 // go-routine safe.
 func (q *QueueSafe) Push(item string) {
 	q.lock.Lock()
@@ -49,10 +51,11 @@ func (q *QueueSafe) Push(item string) {
 		q.tail.next = n
 		q.tail = n
 	}
+
 	q.count++
 }
 
-// Returns the value at the front of the queue.
+// Poll returns the value at the front of the queue.
 // i.e. the oldest value in the queue.
 // go-routine safe.
 func (q *QueueSafe) Poll() string {
@@ -69,12 +72,13 @@ func (q *QueueSafe) Poll() string {
 	if q.head == nil {
 		q.tail = nil
 	}
+
 	q.count--
 
 	return n.data
 }
 
-// Returns a read value at the front of the queue.
+// Peek returns a read value at the front of the queue.
 // i.e. the oldest value in the queue.
 // go-routine safe.
 func (q *QueueSafe) Peek() string {
@@ -96,18 +100,18 @@ type QueueBasic struct {
 	count int
 }
 
-// return a structure basic of queue
+// NewQueueBasic return a QueueBasic object
 func NewQueueBasic() *QueueBasic {
 	q := &QueueBasic{}
 	return q
 }
 
-// return length of the queue
+// Len return length of the queue
 func (q *QueueBasic) Len() int {
 	return q.count
 }
 
-// insert a element in the queue
+// Push insert a element in the queue
 func (q *QueueBasic) Push(item string) {
 	n := &queuenode{data: item}
 
@@ -118,10 +122,11 @@ func (q *QueueBasic) Push(item string) {
 		q.tail.next = n
 		q.tail = n
 	}
+
 	q.count++
 }
 
-// returns and extracts the last element from the head of the queue
+// Poll returns and extracts the last element from the head of the queue
 func (q *QueueBasic) Poll() string {
 	if q.head == nil {
 		return ""
@@ -138,7 +143,7 @@ func (q *QueueBasic) Poll() string {
 	return n.data
 }
 
-// returns witout extracts the last element from the head of the queue
+// Peek returns witout extracts the last element from the head of the queue
 func (q *QueueBasic) Peek() string {
 	n := q.head
 	if n == nil {

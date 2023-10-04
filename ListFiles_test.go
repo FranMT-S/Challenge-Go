@@ -29,18 +29,3 @@ func BenchmarkListFilesIterative(b *testing.B) {
 		Helpers.ListAllFilesIterative(pathTest)
 	}
 }
-func BenchmarkListFilesWalker(b *testing.B) {
-
-	for i := 0; i < b.N; i++ {
-		Helpers.ListAllFilesWalkDir(pathTest)
-	}
-}
-
-// func BenchmarkListListAllFilesSync(b *testing.B) {
-// 	// path := "src/db/maildir"
-// 	path := "src/db/maildir"
-// 	for i := 0; i < b.N; i++ {
-
-// 		ListAllFilesAsync(path, 50)
-// 	}
-// }

@@ -25,6 +25,7 @@ func (s *StackLinkedList) Peek() int {
 	if s.IsEmpty() {
 		return 0
 	}
+
 	return s.head.value
 }
 
@@ -37,11 +38,12 @@ func (s *StackLinkedList) Push(value int) {
 // Pop() function
 func (s *StackLinkedList) Pop() (int, bool) {
 	if s.IsEmpty() {
-
 		return 0, false
 	}
+
 	value := s.head.value
 	s.head = s.head.next
 	s.size--
+
 	return value, true
 }

@@ -22,7 +22,7 @@ func Server() {
 
 		if err != nil {
 			fmt.Println("Error accepting: ", err.Error())
-			os.Exit(1)
+
 		}
 		fmt.Println("client connected")
 		go processClient(connection)
@@ -38,6 +38,7 @@ func processClient(connection net.Conn) {
 		for {
 			// fmt.Println("waiting client message")
 			mLen, err := connection.Read(buffer)
+
 			if err != nil {
 				fmt.Println("Error reading:", err.Error())
 				connection.Close()

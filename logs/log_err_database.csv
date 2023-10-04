@@ -1,3 +1,9 @@
 Date,Operation,description,Error
 "Sun, 24 Sep 2023 14:13:39 CST",database,there was an error querying the database,"Post ""http://localhost:4080/api/index"": dial tcp [::1]:4080: connectex: No connection could be made because the target machine actively refused it."
 "Sun, 24 Sep 2023 14:15:53 CST",database,there was an error querying the database,"Post ""http://localhost:4080/api/index"": dial tcp [::1]:4080: connectex: No connection could be made because the target machine actively refused it."
+"Tue, 26 Sep 2023 01:21:19 CST",database,there was an error querying the database,"Post ""http://localhost:4080/api/index"": dial tcp [::1]:4080: connectex: No connection could be made because the target machine actively refused it."
+"Tue, 26 Sep 2023 01:21:34 CST",database,there was an error querying the database,"Post ""http://localhost:4080/api/index"": dial tcp [::1]:4080: connectex: No connection could be made because the target machine actively refused it."
+"Tue, 26 Sep 2023 01:22:16 CST",database,there was an error querying the database,"Post ""http://localhost:4080/api/index"": dial tcp [::1]:4080: connectex: No connection could be made because the target machine actively refused it."
+"Tue, 26 Sep 2023 01:29:15 CST",database,there was an error querying the database,"Post ""http://localhost:4080/api/index"": dial tcp [::1]:4080: connectex: No connection could be made because the target machine actively refused it."
+"Tue, 26 Sep 2023 01:29:45 CST",database,there was an error querying the database,"Post ""http://localhost:4080/api/index"": dial tcp [::1]:4080: connectex: No connection could be made because the target machine actively refused it."
+"Tue, 26 Sep 2023 01:29:57 CST",database,there was an error querying the database,"Post ""http://localhost:4080/api/index"": dial tcp [::1]:4080: connectex: No connection could be made because the target machine actively refused it."

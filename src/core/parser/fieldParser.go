@@ -11,7 +11,7 @@ import (
 	model "github.com/FranMT-S/Challenge-Go/src/model"
 )
 
-// cleans line breaks, tabs, backspaces at the beginning and end of each line.
+// cleanField cleans line breaks, tabs, backspaces at the beginning and end of each line.
 //
 // only must used in field header of mails.
 func cleanField(s string) string {
@@ -22,7 +22,7 @@ func cleanField(s string) string {
 	return s
 }
 
-// if could not convert string to date, return empty string and error
+// parseDate if could not convert string to date, return empty string and error
 func parseDate(s string) (date string, err error) {
 	t, err := time.Parse("Mon, _2 Jan 2006 15:04:05 -0700 (MST)", s)
 	if err != nil {
@@ -32,21 +32,21 @@ func parseDate(s string) (date string, err error) {
 	return t.Format("2006-01-02T15:04:05Z"), nil
 }
 
-// return a mail from a map structure containing keys of the mail fields
+// mailFroMap return a mail from a map structure containing keys of the mail fields
 //
 // if failed return a mail=nil and the error
 func mailFroMap(_map map[string]string) (*model.Mail, error) {
 
 	mail := new(model.Mail)
-	date, err := parseDate(cleanField(_map[DATE]))
+
 	mail.Mime_Version = cleanField(_map[MIME_VERSION])
-
-	if err != nil {
-		return nil, err
-	}
-
 	if mail.Mime_Version == "" {
 		return nil, fmt.Errorf("%v", constants_log.ERROR_NOT_IS_MIME_FILE)
+	}
+
+	date, err := parseDate(cleanField(_map[DATE]))
+	if err != nil {
+		return nil, err
 	}
 
 	mail.Date = date
@@ -65,7 +65,7 @@ func mailFroMap(_map map[string]string) (*model.Mail, error) {
 	mail.X_Folder = cleanField(_map[X_FOLDER])
 	mail.X_Origin = cleanField(_map[X_ORIGIN])
 	mail.X_FileName = cleanField(_map[X_FILENAME])
-	mail.Content = cleanField(_map[CONTENT])
+	mail.Content = _map[CONTENT]
 
 	return mail, nil
 }

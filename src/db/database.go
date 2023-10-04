@@ -18,7 +18,7 @@ type zincDatabase struct {
 	client *http.Client
 }
 
-// returns a single instance of the database
+// ZincDatabase returns a single instance of the database
 func ZincDatabase() *zincDatabase {
 	if z_database == nil {
 		z_database = &zincDatabase{client: &http.Client{}}
@@ -27,8 +27,8 @@ func ZincDatabase() *zincDatabase {
 	return z_database
 }
 
-// Try to create the database index in case it does not exist.
-func (db zincDatabase) CreateIndex() {
+// CreateIndex Try to create the database index in case it does not exist.
+func (db zincDatabase) CreateIndex() error {
 	index := fmt.Sprintf(`{
 		"name": "%v",
 		"storage_type": "disk",
@@ -194,7 +194,6 @@ func (db zincDatabase) CreateIndex() {
 	url := os.Getenv("URL") + "index"
 
 	data := strings.NewReader(index)
-
 	req, err := http.NewRequest("POST", url, data)
 	if err != nil {
 		_logs.Println(constants_log.ERROR_CREATE_BASE + ":" + err.Error())
@@ -205,13 +204,12 @@ func (db zincDatabase) CreateIndex() {
 			err,
 		)
 
-		return
+		return err
 	}
 
 	myMiddleware.ZincHeader(req)
 
 	resp, err := db.client.Do(req)
-
 	if err != nil {
 
 		_logs.Println(constants_log.ERROR_DATA_BASE + ":" + err.Error())
@@ -222,13 +220,12 @@ func (db zincDatabase) CreateIndex() {
 			err,
 		)
 
-		return
+		return err
 	}
 
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
-
 	if err != nil {
 		_logs.Println(constants_log.ERROR_DATA_BASE + ":" + err.Error())
 		_logs.LogSVG(
@@ -238,7 +235,7 @@ func (db zincDatabase) CreateIndex() {
 			err,
 		)
 
-		return
+		return err
 	}
 
 	if string(body) != fmt.Sprintf(`{"error":"index [%v] already exists"}`, os.Getenv("INDEX")) {
@@ -247,15 +244,16 @@ func (db zincDatabase) CreateIndex() {
 		fmt.Println(string(body))
 		_logs.ColorWhite()
 	}
+
+	return nil
 }
 
-// makes a request to the database to store the files.
+// BulkRequest makes a request to the database to store the files.
 func BulkRequest(command, mailsData string) error {
 
 	url := os.Getenv("URL") + command
 
 	data := strings.NewReader(mailsData)
-
 	req, err := http.NewRequest("POST", url, data)
 	if err != nil {
 		return err
@@ -264,7 +262,6 @@ func BulkRequest(command, mailsData string) error {
 	myMiddleware.ZincHeader(req)
 
 	resp, err := http.DefaultClient.Do(req)
-
 	if err != nil {
 		return err
 	}

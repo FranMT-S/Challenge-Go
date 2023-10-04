@@ -12,7 +12,7 @@ import (
 )
 
 /*
-adds a new log record to the file. If the file does not exist it will create it
+LogSVG adds a new log record to the file. If the file does not exist it will create it
 
   - fileName the name of the log file
 
@@ -24,12 +24,11 @@ adds a new log record to the file. If the file does not exist it will create it
 */
 func LogSVG(fileName, operation, description string, err error) {
 
-	Helpers.CreateDirectoryLogIfNotExist("logs")
-
-	path := fmt.Sprintf("logs/%v.csv", fileName)
-
 	var file *os.File
 	var header []string = nil
+
+	Helpers.CreateDirectoryLogIfNotExist("logs")
+	path := fmt.Sprintf("logs/%v.csv", fileName)
 
 	if isNotExist(path) {
 		header = []string{"Date", "Operation", "description", "Error"}
@@ -65,7 +64,7 @@ func isNotExist(name string) bool {
 	return os.IsNotExist(err)
 }
 
-// Execute a log.Println but in red text
+// Println Execute a log.Println but in red text
 func Println(v ...any) {
 	ColorRed()
 	log.Println(v...)

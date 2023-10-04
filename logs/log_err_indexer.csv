@@ -31,3 +31,9 @@ Date,Operation,description,Error
 "Sun, 24 Sep 2023 14:14:50 CST",bulker,data bulker failed,"Post ""http://localhost:4080/api/_bulkv2"": dial tcp [::1]:4080: connectex: No connection could be made because the target machine actively refused it."
 "Sun, 24 Sep 2023 14:14:53 CST",bulker,data bulker failed,"Post ""http://localhost:4080/api/_bulkv2"": dial tcp [::1]:4080: connectex: No connection could be made because the target machine actively refused it."
 "Sun, 24 Sep 2023 14:15:56 CST",bulker,data bulker failed,"Post ""http://localhost:4080/api/_bulkv2"": dial tcp [::1]:4080: connectex: No connection could be made because the target machine actively refused it."
+"Tue, 03 Oct 2023 19:31:20 CST",parser,could not parse file: db/Test50K/baughman-d/deleted_items/303,the file is not a mime file
+"Tue, 03 Oct 2023 19:31:23 CST",parser,could not parse file: db/Test50K/baughman-d/tasks/4,the file is not a mime file
+"Tue, 03 Oct 2023 20:29:06 CST",parser,could not parse file: db/maildir/baughman-d/deleted_items/303,the file is not a mime file
+"Tue, 03 Oct 2023 20:29:08 CST",parser,could not parse file: db/maildir/baughman-d/tasks/4,the file is not a mime file
+"Tue, 03 Oct 2023 20:48:40 CST",parser,could not parse file: db/maildir/lokey-t/calendar/28,the file is not a mime file
+"Tue, 03 Oct 2023 20:48:40 CST",parser,could not parse file: db/maildir/lokey-t/calendar/33,"parsing time ""Monday, March 12"" as ""Mon, _2 Jan 2006 15:04:05 -0700 (MST)"": cannot parse ""day, March 12"" as "", """

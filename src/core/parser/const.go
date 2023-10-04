@@ -19,7 +19,7 @@ const (
 	X_FOLDER                  = "X-Folder:"
 	X_ORIGIN                  = "X-Origin:"
 	X_FILENAME                = "X-FileName:"
+	CONTENT                   = "Content"
 
-	CONTENT  = "Content"
 	K_FATHER = "Father" // used int the struct lineMail
 )

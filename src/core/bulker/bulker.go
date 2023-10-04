@@ -37,11 +37,12 @@ This object is based on the [Bulk] endpoint provided by [Zincsearch].
 type BulkerV1 struct {
 }
 
+// getCommand return el name of the endpoint to use by upload the data
 func (bulk BulkerV1) getCommand() string {
 	return "_bulk"
 }
 
-// Upload the information to the database
+// Bulk Upload the information to the database
 func (bulk BulkerV1) Bulk(mails []*model.Mail) {
 	index := fmt.Sprintf(`{ "index" : { "_index" : "%v" } }  `, os.Getenv("INDEX"))
 	json := ""
@@ -61,7 +62,7 @@ func (bulk BulkerV1) Bulk(mails []*model.Mail) {
 	}
 }
 
-// Create a BulkerV1 object that implements IBulker
+// CreateBulkerV1 Create a BulkerV1 object that implements IBulker
 func CreateBulkerV1() BulkerV1 {
 	return BulkerV1{}
 }
@@ -88,11 +89,12 @@ This object is based on the [BulkV2] endpoint provided by [Zincsearch]
 type BulkerV2 struct {
 }
 
+// getCommand return el name of the endpoint to use by upload the data
 func (bulk BulkerV2) getCommand() string {
 	return "_bulkv2"
 }
 
-// Upload the information to the database
+// Bulk  Upload the information to the database
 func (bulk BulkerV2) Bulk(mails []*model.Mail) {
 	bulkResponse := bulkResponse{
 		Index:   os.Getenv("INDEX"),
@@ -120,7 +122,7 @@ func (bulk BulkerV2) Bulk(mails []*model.Mail) {
 
 }
 
-// Create a BulkerV2 object that implements IBulker
+// CreateBulkerV2 Create a BulkerV2 object that implements IBulker
 func CreateBulkerV2() BulkerV2 {
 	return BulkerV2{}
 }

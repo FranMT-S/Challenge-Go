@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-// provides methods to read and analyze a line
+// ILineReader provides methods to read and analyze a line
 //   - Read: is in charge of analyzing the line
 //   - getMapData: is responsible for returning a map that contains the email data
 type ILineReader[T string | *lineMail] interface {
@@ -12,24 +12,24 @@ type ILineReader[T string | *lineMail] interface {
 	getMapData() map[string]string
 }
 
-// read and analyze line by line and create a map with mail data
+// lineByLineReader read and analyze line by line and create a map with mail data
 //   - beforeLecture: it is used for fields with multilines
 type lineByLineReader struct {
 	mailMap       map[string]string
 	beforeLecture string
 }
 
-// return a lineByLineReader that implement ILineReader
+// newLineByLineReader return a lineByLineReader object that implement ILineReader
 func newLineByLineReader() *lineByLineReader {
 	return &lineByLineReader{mailMap: make(map[string]string)}
 }
 
-// return a map that contains the email data
+// getMapData return a map that contains the email data
 func (lineReader lineByLineReader) getMapData() map[string]string {
 	return lineReader.mailMap
 }
 
-// read line by line  searching the email fields
+// Read read line by line  searching the email fields
 // X-Filename is the field that marks the final of header
 func (lineReader *lineByLineReader) Read(line string) {
 	if lineReader.mailMap[X_FILENAME] != "" {
@@ -98,14 +98,14 @@ type lineByLineReaderAsync struct {
 	headLineFlag int // mark the final of header when X-FileName is encountered
 }
 
-// return a lineByLineReaderAsync that implement ILineReader.
+// newLineByLineReaderAsync return a lineByLineReaderAsync object that implement ILineReader.
 //
 // Reader that uses a lineMail object to ensure the use of goroutines.
 func newLineByLineReaderAsync() *lineByLineReaderAsync {
 	return &lineByLineReaderAsync{headLineFlag: -1}
 }
 
-// Receives a lineMail object and analize the line of file.
+// Read Receives a lineMail object and analize the line of file.
 //
 // this function mutates the lineMail.
 func (lineReader *lineByLineReaderAsync) Read(line *lineMail) {
@@ -171,7 +171,7 @@ func (lineReader *lineByLineReaderAsync) Read(line *lineMail) {
 
 }
 
-// return a map that contains the email data
+// getMapData return a map that contains the email data
 func (lineReader *lineByLineReaderAsync) getMapData() map[string]string {
 	temp := lineReader.line
 	mailMap := make(map[string]string)

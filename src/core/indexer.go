@@ -16,17 +16,9 @@ import (
 )
 
 const (
-	_MAXCONCURRENTALLOWED = 30
-	_MAXPAGINATION        = 5000
+	MAXCONCURRENTALLOWED = 30
+	MAXPAGINATION        = 5000
 )
-
-func GetMaxConcurrentAllow() int {
-	return _MAXCONCURRENTALLOWED
-}
-
-func GetMaxmaxPaginationAllowed() int {
-	return _MAXPAGINATION
-}
 
 /*
 Indexer - Contains methods for files that are registered in the database
@@ -60,15 +52,15 @@ type Indexer struct {
 //     If maxConcurrent is greater or less, it will be automatically assigned in min or max.
 func (indexer Indexer) StartAsync(path string, maxConcurrent int) {
 
-	if maxConcurrent < 0 {
-		maxConcurrent = 1
-	} else if maxConcurrent > _MAXCONCURRENTALLOWED {
-		maxConcurrent = _MAXCONCURRENTALLOWED
-	}
-
 	pathCh := make(chan string)
 	mutex := new(sync.Mutex)
 	wg := new(sync.WaitGroup)
+
+	if maxConcurrent < 0 {
+		maxConcurrent = 1
+	} else if maxConcurrent > MAXCONCURRENTALLOWED {
+		maxConcurrent = MAXCONCURRENTALLOWED
+	}
 
 	// Initialize Worker fro Thead Pool
 	for i := 0; i < maxConcurrent; i++ {
@@ -86,9 +78,9 @@ func (indexer Indexer) StartAsync(path string, maxConcurrent int) {
 func (indexer Indexer) workerAsync(pathCh chan string, mutex *sync.Mutex, wg *sync.WaitGroup, id int) {
 	defer wg.Done()
 
+	var mails []*model.Mail
 	NumRequest := 0
 
-	var mails []*model.Mail
 	for path := range pathCh {
 		file, err := os.Open(path)
 		if err != nil {
@@ -147,15 +139,15 @@ func (indexer Indexer) safeRequest(mails []*model.Mail, mutex *sync.Mutex, id in
 
 // synchronous methods
 
-// index all files from a array of string with path of files
+// StartFromArray index all files from a array of string with path of files
 func (indexer Indexer) StartFromArray(FilePaths []string) {
 
 	if indexer.Pagination <= 0 {
 		indexer.Pagination = 1000
 	}
 
-	if indexer.Pagination > _MAXPAGINATION {
-		indexer.Pagination = _MAXPAGINATION
+	if indexer.Pagination > MAXPAGINATION {
+		indexer.Pagination = MAXPAGINATION
 	}
 
 	if indexer.Parser == nil {
@@ -173,15 +165,15 @@ func (indexer Indexer) StartFromArray(FilePaths []string) {
 	indexer.work(FilePaths)
 }
 
-// index all files in the directory of the specified path
+// Start index all files in the directory of the specified path
 func (indexer Indexer) Start(path string) {
 
 	if indexer.Pagination <= 0 {
 		indexer.Pagination = 1000
 	}
 
-	if indexer.Pagination > _MAXPAGINATION {
-		indexer.Pagination = _MAXPAGINATION
+	if indexer.Pagination > MAXPAGINATION {
+		indexer.Pagination = MAXPAGINATION
 	}
 
 	if indexer.Parser == nil {

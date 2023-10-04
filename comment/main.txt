@@ -117,23 +117,7 @@ func createDirectoryIfNotExist() {
 }
 
 
-	// var opt string
-	// Taking input from user
-	// fmt.Println("ingrese un comando: \nclient \nserver \nquite \ncommand: ")
-	// fmt.Scanln(&opt)
-	// switch strings.ToLower(opt) {
-	// case "client":
-	// 	fmt.Println("start client")
-	// 	mysocket.Client()
-	// case "server":
-	// 	fmt.Println("start server")
-	// 	mysocket.Server()
-	// case "quite":
-	// 	fmt.Println("saliendo")
-	// default:
-	// 	fmt.Println("ingrese un comando: client, server, quite")
-	// 	fmt.Scanln(&opt)
-	// }
+
 
 		// // path := "src/db/maildir/allen-p"
 

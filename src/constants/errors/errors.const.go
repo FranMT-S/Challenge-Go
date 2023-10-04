@@ -1,6 +1,6 @@
-// contains variables with general errors
 package constants_err
 
+// messages of general errors
 const (
 	ERROR_PARSER_UNINITIALIZED = "the parser has not been initialized"
 	ERROR_BULKER_UNINITIALIZED = "the bulker has not been initialized"
